@@ -1,0 +1,113 @@
+{
+  "header": {
+    "version": 105,
+    "file_size": 952,
+    "checksum": 3655197161,
+    "character_name": "TestDruid",
+    "character_class": 5,
+    "character_class_name": "Druid",
+    "level": 1,
+    "source_path": "tests/cases/TC14/TestDruid.d2s",
+    "status_byte": 0,
+    "is_hardcore": false,
+    "died_flag": false,
+    "is_expansion": true,
+    "progression": 0,
+    "is_dead": false,
+    "highest_difficulty_completed": 0,
+    "gender": "male",
+    "title": ""
+  },
+  "stats": {
+    "strength": 15,
+    "energy": 20,
+    "dexterity": 20,
+    "vitality": 25,
+    "stat_points_remaining": 0,
+    "skill_points_remaining": 0,
+    "current_hp": 55.0,
+    "max_hp": 55.0,
+    "current_mana": 20.0,
+    "max_mana": 20.0,
+    "current_stamina": 84.0,
+    "max_stamina": 84.0,
+    "level": 1,
+    "experience": 0,
+    "gold_inventory": 0,
+    "gold_stash": 0
+  },
+  "mercenary": null,
+  "items": [
+    {
+      "item_code": "cm1",
+      "flags": {
+        "identified": true,
+        "socketed": false,
+        "starter_item": false,
+        "simple": false,
+        "ethereal": false,
+        "personalized": false,
+        "runeword": false,
+        "location_id": 0,
+        "equipped_slot": 0,
+        "position_x": 0,
+        "position_y": 0,
+        "panel_id": 1
+      },
+      "socket_children": [],
+      "extended": {
+        "unique_item_id": 12801449672,
+        "item_level": 99,
+        "quality": 4,
+        "quality_name": "Magic",
+        "has_custom_graphics": true,
+        "gfx_index": 0,
+        "has_class_specific_data": true
+      },
+      "armor_data": null,
+      "quantity": 0,
+      "total_nr_of_sockets": 0,
+      "automod_id": 22,
+      "magical_properties": [
+        {
+          "stat_id": 9,
+          "name": "maxmana",
+          "param": 0,
+          "value": 20
+        },
+        {
+          "stat_id": 41,
+          "name": "lightresist",
+          "param": 0,
+          "value": 6
+        },
+        {
+          "stat_id": 43,
+          "name": "coldresist",
+          "param": 0,
+          "value": 6
+        },
+        {
+          "stat_id": 384,
+          "name": "charm_weight",
+          "param": 0,
+          "value": 1
+        }
+      ],
+      "set_bonus_properties": [],
+      "set_bonus_mask": 0,
+      "superior_type": null,
+      "unique_type_id": null,
+      "set_item_id": null,
+      "prefix_id": 837,
+      "suffix_id": 657,
+      "rare_name_id1": null,
+      "rare_name_id2": null,
+      "rare_affix_ids": [],
+      "rare_affix_slots": [],
+      "runeword_id": null,
+      "runeword_properties": []
+    }
+  ],
+  "merc_items": []
+}

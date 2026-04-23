@@ -1,0 +1,141 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "d2rr-toolkit"
+version = "0.1.0-dev"
+description = "Parser, writer, and archive toolkit for D2R Reimagined save files (CLI + Python library)"
+requires-python = ">=3.10"
+readme = "README.md"
+license = { text = "MIT" }
+
+dependencies = [
+    "typer>=0.12",
+    "rich>=13",
+    "pydantic>=2.0",
+    # platformdirs resolves the per-user cache directory for the
+    # game-data pickle cache (d2rr_toolkit.meta.cache).  When absent
+    # the cache falls back to ~/.cache/d2rr-toolkit, so the library
+    # still runs, but a proper install gets the platform-native
+    # location (%LOCALAPPDATA% on Windows, XDG on Linux, ~/Library
+    # on macOS).
+    "platformdirs>=4",
+    # Pillow is used by the sprite pipeline (d2rr_toolkit.sprites.bulk_loader
+    # + d2rr_toolkit.adapters.casc.sprites) for decoded-PNG output and
+    # HD SpA1 RGBA rendering.  The imports are lazy (inside function
+    # bodies), so a missing Pillow is not caught at import time - it
+    # surfaces as ModuleNotFoundError the first time a sprite is
+    # resolved.  Declaring the dependency here closes the gap.
+    "Pillow>=10.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-cov",
+    "mypy",
+    "ruff",
+    "interrogate>=1.5",
+    # Machine enforcement of the six architectural dependency rules
+    # documented in docs/ARCHITECTURE.md §"Dependency rules". Review-only
+    # enforcement let boundary violations ship; import-linter runs on
+    # every CI build to catch them mechanically.
+    "import-linter>=2.0",
+]
+
+[project.scripts]
+d2rr-toolkit = "d2rr_toolkit.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = [
+    # Ad-hoc verification scripts (pre-2026-04-11, not shipped).
+    "tests/verification",
+    "tests/build_demo_character.py",
+    "tests/run_all_tc.py",
+]
+
+[tool.ruff.lint]
+# Ruff 'lint.select' defaults to E+F. These four rule classes have real
+# false-positives in low-level binary-format code (unused struct
+# fields kept for documentation, ambiguous single-letter comprehension
+# variables, E402 on post-class dispatch-table populate blocks) and
+# are disabled project-wide. Individual files can still opt in via
+# noqa.
+ignore = [
+    "E402",  # module-import-not-at-top - intentional for shims + dispatch tables
+    "E741",  # ambiguous-variable-name (single letters in comprehensions)
+    "F401",  # unused-import - star-imports and TYPE_CHECKING imports trip this
+    "F403",  # star-import used
+    "F405",  # may-be-undefined-from-star-import
+    "F821",  # undefined-name - string-form forward refs confuse the linter
+    "F841",  # unused local variable - documentation aliases in struct parsers
+]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.importlinter]
+# Enforces the 5 import-layering rules from docs/ARCHITECTURE.md.
+# Rule 6 (no direct open() on game-data files) is not expressible as
+# an import contract -- would need a separate AST-level check.
+root_packages = ["d2rr_toolkit"]
+
+[[tool.importlinter.contracts]]
+name = "1. Parsers never import database"
+type = "forbidden"
+source_modules = ["d2rr_toolkit.parsers"]
+forbidden_modules = ["d2rr_toolkit.database"]
+
+[[tool.importlinter.contracts]]
+name = "2. Models are a leaf -- no imports of parsers or writers"
+type = "forbidden"
+source_modules = ["d2rr_toolkit.models"]
+forbidden_modules = ["d2rr_toolkit.parsers", "d2rr_toolkit.writers"]
+
+[[tool.importlinter.contracts]]
+name = "3. Display consumes only models + game_data + exceptions + constants"
+type = "forbidden"
+source_modules = ["d2rr_toolkit.display"]
+# display.palette + display.tinted_sprite legitimately need the
+# CASCReader type for RGBA sprite tinting; game_data loaders also
+# reach adapters.casc transitively by design (Iron Rule).
+# Forbid direct display-to-parsers/writers/database edges; transitive
+# display->game_data->adapters chains are allowed.
+forbidden_modules = [
+    "d2rr_toolkit.parsers",
+    "d2rr_toolkit.writers",
+    "d2rr_toolkit.database",
+]
+allow_indirect_imports = "false"
+
+[[tool.importlinter.contracts]]
+name = "4. Parsers never import writers (reverse flow only)"
+type = "forbidden"
+source_modules = ["d2rr_toolkit.parsers"]
+forbidden_modules = ["d2rr_toolkit.writers"]
+
+[tool.interrogate]
+# 100.0% coverage reached 2026-04-20 after filling every get_*_db
+# singleton accessor, dataclass is_fixed/is_brick accessor, and
+# private helper under its public-function parent.
+# Pin at 100 - any new function/class must ship its docstring on the
+# same commit.
+fail-under = 100
+ignore-init-method = true
+ignore-init-module = true
+ignore-private = true        # "_" prefixed functions are implementation detail
+ignore-magic = true          # dunder methods
+ignore-property-decorators = false
+ignore-nested-functions = true
+verbose = 1
+

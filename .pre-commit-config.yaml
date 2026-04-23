@@ -1,0 +1,46 @@
+# Pre-commit hooks for D2RR Toolkit.
+#
+# Install once per clone:
+#   pip install pre-commit
+#   pre-commit install
+#
+# The hooks mirror (a subset of) the CI pipeline declared in
+# .github/workflows/ci.yml - running them before every git commit
+# keeps CI from flagging trivial formatting / lint regressions.
+#
+# mypy is deliberately NOT pinned here - it's slow enough on cold
+# cache that it would make git commit feel sluggish; CI runs it on
+# every push instead. If you want it locally too, uncomment the
+# mirrors-mypy block at the bottom.
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.0
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
+
+  # Uncomment to run mypy on every commit (slow on cold cache):
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.10.0
+  #   hooks:
+  #     - id: mypy
+  #       additional_dependencies:
+  #         - "pydantic>=2.0"
+  #         - "types-Pillow"
+  #       args: ["--config-file=pyproject.toml", "src/"]
+  #       pass_filenames: false
+

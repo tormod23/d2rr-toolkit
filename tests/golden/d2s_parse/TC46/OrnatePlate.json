@@ -1,0 +1,255 @@
+{
+  "header": {
+    "version": 105,
+    "file_size": 1002,
+    "checksum": 2952056258,
+    "character_name": "TestSorc",
+    "character_class": 1,
+    "character_class_name": "Sorceress",
+    "level": 1,
+    "source_path": "tests/cases/TC46/OrnatePlate.d2s",
+    "status_byte": 0,
+    "is_hardcore": false,
+    "died_flag": false,
+    "is_expansion": true,
+    "progression": 0,
+    "is_dead": false,
+    "highest_difficulty_completed": 0,
+    "gender": "female",
+    "title": ""
+  },
+  "stats": {
+    "strength": 10,
+    "energy": 35,
+    "dexterity": 25,
+    "vitality": 10,
+    "stat_points_remaining": 0,
+    "skill_points_remaining": 0,
+    "current_hp": 40.0,
+    "max_hp": 40.0,
+    "current_mana": 35.0,
+    "max_mana": 35.0,
+    "current_stamina": 74.0,
+    "max_stamina": 74.0,
+    "level": 1,
+    "experience": 0,
+    "gold_inventory": 0,
+    "gold_stash": 0
+  },
+  "mercenary": null,
+  "items": [
+    {
+      "item_code": "xar",
+      "flags": {
+        "identified": true,
+        "socketed": true,
+        "starter_item": false,
+        "simple": false,
+        "ethereal": false,
+        "personalized": false,
+        "runeword": false,
+        "location_id": 0,
+        "equipped_slot": 0,
+        "position_x": 0,
+        "position_y": 0,
+        "panel_id": 1
+      },
+      "socket_children": [
+        {
+          "item_code": "gmm",
+          "flags": {
+            "identified": true,
+            "socketed": false,
+            "starter_item": false,
+            "simple": true,
+            "ethereal": false,
+            "personalized": false,
+            "runeword": false,
+            "location_id": 6,
+            "equipped_slot": 0,
+            "position_x": 0,
+            "position_y": 0,
+            "panel_id": 0
+          },
+          "socket_children": [],
+          "extended": null,
+          "armor_data": null,
+          "quantity": 1,
+          "total_nr_of_sockets": 0,
+          "automod_id": null,
+          "magical_properties": [],
+          "set_bonus_properties": [],
+          "set_bonus_mask": 0,
+          "superior_type": null,
+          "unique_type_id": null,
+          "set_item_id": null,
+          "prefix_id": null,
+          "suffix_id": null,
+          "rare_name_id1": null,
+          "rare_name_id2": null,
+          "rare_affix_ids": [],
+          "rare_affix_slots": [],
+          "runeword_id": null,
+          "runeword_properties": []
+        },
+        {
+          "item_code": "jew",
+          "flags": {
+            "identified": true,
+            "socketed": false,
+            "starter_item": false,
+            "simple": false,
+            "ethereal": false,
+            "personalized": false,
+            "runeword": false,
+            "location_id": 6,
+            "equipped_slot": 0,
+            "position_x": 1,
+            "position_y": 0,
+            "panel_id": 0
+          },
+          "socket_children": [],
+          "extended": {
+            "unique_item_id": 20408414280,
+            "item_level": 98,
+            "quality": 6,
+            "quality_name": "Rare",
+            "has_custom_graphics": true,
+            "gfx_index": 3,
+            "has_class_specific_data": false
+          },
+          "armor_data": null,
+          "quantity": 0,
+          "total_nr_of_sockets": 0,
+          "automod_id": null,
+          "magical_properties": [
+            {
+              "stat_id": 17,
+              "name": "item_maxdamage_percent",
+              "param": 0,
+              "value": 22
+            },
+            {
+              "stat_id": 18,
+              "name": "item_mindamage_percent",
+              "param": 0,
+              "value": 22
+            },
+            {
+              "stat_id": 19,
+              "name": "tohit",
+              "param": 0,
+              "value": 56
+            },
+            {
+              "stat_id": 31,
+              "name": "armorclass",
+              "param": 0,
+              "value": 51
+            }
+          ],
+          "set_bonus_properties": [],
+          "set_bonus_mask": 0,
+          "superior_type": null,
+          "unique_type_id": null,
+          "set_item_id": null,
+          "prefix_id": null,
+          "suffix_id": null,
+          "rare_name_id1": 14,
+          "rare_name_id2": 130,
+          "rare_affix_ids": [
+            121,
+            155,
+            18
+          ],
+          "rare_affix_slots": [
+            0,
+            2,
+            4
+          ],
+          "runeword_id": null,
+          "runeword_properties": []
+        },
+        {
+          "item_code": "r22",
+          "flags": {
+            "identified": true,
+            "socketed": false,
+            "starter_item": false,
+            "simple": true,
+            "ethereal": false,
+            "personalized": false,
+            "runeword": false,
+            "location_id": 6,
+            "equipped_slot": 0,
+            "position_x": 2,
+            "position_y": 0,
+            "panel_id": 0
+          },
+          "socket_children": [],
+          "extended": null,
+          "armor_data": null,
+          "quantity": 1,
+          "total_nr_of_sockets": 0,
+          "automod_id": null,
+          "magical_properties": [],
+          "set_bonus_properties": [],
+          "set_bonus_mask": 0,
+          "superior_type": null,
+          "unique_type_id": null,
+          "set_item_id": null,
+          "prefix_id": null,
+          "suffix_id": null,
+          "rare_name_id1": null,
+          "rare_name_id2": null,
+          "rare_affix_ids": [],
+          "rare_affix_slots": [],
+          "runeword_id": null,
+          "runeword_properties": []
+        }
+      ],
+      "extended": {
+        "unique_item_id": 11699376051,
+        "item_level": 99,
+        "quality": 4,
+        "quality_name": "Magic",
+        "has_custom_graphics": false,
+        "gfx_index": 0,
+        "has_class_specific_data": false
+      },
+      "armor_data": {
+        "defense_raw": 460,
+        "defense_display": 450,
+        "durability": {
+          "max_durability": 60,
+          "current_durability": 60
+        }
+      },
+      "quantity": 0,
+      "total_nr_of_sockets": 3,
+      "automod_id": null,
+      "magical_properties": [
+        {
+          "stat_id": 110,
+          "name": "item_poisonlengthresist",
+          "param": 0,
+          "value": 75
+        }
+      ],
+      "set_bonus_properties": [],
+      "set_bonus_mask": 0,
+      "superior_type": null,
+      "unique_type_id": null,
+      "set_item_id": null,
+      "prefix_id": -1,
+      "suffix_id": 97,
+      "rare_name_id1": null,
+      "rare_name_id2": null,
+      "rare_affix_ids": [],
+      "rare_affix_slots": [],
+      "runeword_id": null,
+      "runeword_properties": []
+    }
+  ],
+  "merc_items": []
+}

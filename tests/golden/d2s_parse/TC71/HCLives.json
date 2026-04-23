@@ -1,0 +1,42 @@
+{
+  "header": {
+    "version": 105,
+    "file_size": 922,
+    "checksum": 4147657119,
+    "character_name": "HCLives",
+    "character_class": 7,
+    "character_class_name": "Warlock",
+    "level": 1,
+    "source_path": "tests/cases/TC71/HCLives.d2s",
+    "status_byte": 4,
+    "is_hardcore": true,
+    "died_flag": false,
+    "is_expansion": true,
+    "progression": 0,
+    "is_dead": false,
+    "highest_difficulty_completed": 0,
+    "gender": "male",
+    "title": ""
+  },
+  "stats": {
+    "strength": 15,
+    "energy": 20,
+    "dexterity": 20,
+    "vitality": 25,
+    "stat_points_remaining": 0,
+    "skill_points_remaining": 0,
+    "current_hp": 55.0,
+    "max_hp": 55.0,
+    "current_mana": 20.0,
+    "max_mana": 20.0,
+    "current_stamina": 86.0,
+    "max_stamina": 86.0,
+    "level": 1,
+    "experience": 0,
+    "gold_inventory": 0,
+    "gold_stash": 0
+  },
+  "mercenary": null,
+  "items": [],
+  "merc_items": []
+}

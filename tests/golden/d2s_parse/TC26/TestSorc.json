@@ -1,0 +1,1100 @@
+{
+  "header": {
+    "version": 105,
+    "file_size": 1346,
+    "checksum": 2398260620,
+    "character_name": "TestSorc",
+    "character_class": 1,
+    "character_class_name": "Sorceress",
+    "level": 1,
+    "source_path": "tests/cases/TC26/TestSorc.d2s",
+    "status_byte": 0,
+    "is_hardcore": false,
+    "died_flag": false,
+    "is_expansion": true,
+    "progression": 0,
+    "is_dead": false,
+    "highest_difficulty_completed": 0,
+    "gender": "female",
+    "title": ""
+  },
+  "stats": {
+    "strength": 10,
+    "energy": 35,
+    "dexterity": 25,
+    "vitality": 10,
+    "stat_points_remaining": 0,
+    "skill_points_remaining": 0,
+    "current_hp": 40.0,
+    "max_hp": 40.0,
+    "current_mana": 35.0,
+    "max_mana": 35.0,
+    "current_stamina": 74.0,
+    "max_stamina": 74.0,
+    "level": 1,
+    "experience": 0,
+    "gold_inventory": 0,
+    "gold_stash": 0
+  },
+  "mercenary": null,
+  "items": [
+    {
+      "item_code": "rin",
+      "flags": {
+        "identified": true,
+        "socketed": false,
+        "starter_item": false,
+        "simple": false,
+        "ethereal": false,
+        "personalized": false,
+        "runeword": false,
+        "location_id": 0,
+        "equipped_slot": 0,
+        "position_x": 0,
+        "position_y": 0,
+        "panel_id": 1
+      },
+      "socket_children": [],
+      "extended": {
+        "unique_item_id": 10013660768,
+        "item_level": 98,
+        "quality": 8,
+        "quality_name": "Crafted",
+        "has_custom_graphics": true,
+        "gfx_index": 0,
+        "has_class_specific_data": true
+      },
+      "armor_data": null,
+      "quantity": 0,
+      "total_nr_of_sockets": 0,
+      "automod_id": null,
+      "magical_properties": [
+        {
+          "stat_id": 19,
+          "name": "tohit",
+          "param": 0,
+          "value": 119
+        },
+        {
+          "stat_id": 21,
+          "name": "mindamage",
+          "param": 0,
+          "value": 15
+        },
+        {
+          "stat_id": 22,
+          "name": "maxdamage",
+          "param": 0,
+          "value": 25
+        },
+        {
+          "stat_id": 23,
+          "name": "secondary_mindamage",
+          "param": 0,
+          "value": 15
+        },
+        {
+          "stat_id": 24,
+          "name": "secondary_maxdamage",
+          "param": 0,
+          "value": 25
+        },
+        {
+          "stat_id": 31,
+          "name": "armorclass",
+          "param": 0,
+          "value": 6
+        },
+        {
+          "stat_id": 39,
+          "name": "fireresist",
+          "param": 0,
+          "value": 7
+        },
+        {
+          "stat_id": 41,
+          "name": "lightresist",
+          "param": 0,
+          "value": 7
+        },
+        {
+          "stat_id": 43,
+          "name": "coldresist",
+          "param": 0,
+          "value": 7
+        },
+        {
+          "stat_id": 45,
+          "name": "poisonresist",
+          "param": 0,
+          "value": 7
+        },
+        {
+          "stat_id": 107,
+          "name": "item_singleskill",
+          "param": 114,
+          "value": 3,
+          "paired_value": 0
+        },
+        {
+          "stat_id": 127,
+          "name": "item_allskills",
+          "param": 0,
+          "value": 1
+        },
+        {
+          "stat_id": 159,
+          "name": "item_throw_mindamage",
+          "param": 0,
+          "value": 15
+        },
+        {
+          "stat_id": 160,
+          "name": "item_throw_maxdamage",
+          "param": 0,
+          "value": 25
+        }
+      ],
+      "set_bonus_properties": [],
+      "set_bonus_mask": 0,
+      "superior_type": null,
+      "unique_type_id": null,
+      "set_item_id": null,
+      "prefix_id": null,
+      "suffix_id": null,
+      "rare_name_id1": 41,
+      "rare_name_id2": 94,
+      "rare_affix_ids": [
+        115,
+        0,
+        388,
+        305
+      ],
+      "rare_affix_slots": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "runeword_id": null,
+      "runeword_properties": []
+    },
+    {
+      "item_code": "rin",
+      "flags": {
+        "identified": true,
+        "socketed": false,
+        "starter_item": false,
+        "simple": false,
+        "ethereal": false,
+        "personalized": false,
+        "runeword": false,
+        "location_id": 0,
+        "equipped_slot": 0,
+        "position_x": 1,
+        "position_y": 0,
+        "panel_id": 1
+      },
+      "socket_children": [],
+      "extended": {
+        "unique_item_id": 19512002440,
+        "item_level": 98,
+        "quality": 8,
+        "quality_name": "Crafted",
+        "has_custom_graphics": true,
+        "gfx_index": 1,
+        "has_class_specific_data": false
+      },
+      "armor_data": null,
+      "quantity": 0,
+      "total_nr_of_sockets": 0,
+      "automod_id": null,
+      "magical_properties": [
+        {
+          "stat_id": 21,
+          "name": "mindamage",
+          "param": 0,
+          "value": 15
+        },
+        {
+          "stat_id": 22,
+          "name": "maxdamage",
+          "param": 0,
+          "value": 35
+        },
+        {
+          "stat_id": 23,
+          "name": "secondary_mindamage",
+          "param": 0,
+          "value": 15
+        },
+        {
+          "stat_id": 24,
+          "name": "secondary_maxdamage",
+          "param": 0,
+          "value": 35
+        },
+        {
+          "stat_id": 39,
+          "name": "fireresist",
+          "param": 0,
+          "value": 15
+        },
+        {
+          "stat_id": 41,
+          "name": "lightresist",
+          "param": 0,
+          "value": 15
+        },
+        {
+          "stat_id": 43,
+          "name": "coldresist",
+          "param": 0,
+          "value": 15
+        },
+        {
+          "stat_id": 45,
+          "name": "poisonresist",
+          "param": 0,
+          "value": 15
+        },
+        {
+          "stat_id": 80,
+          "name": "item_magicbonus",
+          "param": 0,
+          "value": 8
+        },
+        {
+          "stat_id": 107,
+          "name": "item_singleskill",
+          "param": 257,
+          "value": 5,
+          "paired_value": 0
+        },
+        {
+          "stat_id": 127,
+          "name": "item_allskills",
+          "param": 0,
+          "value": 1
+        },
+        {
+          "stat_id": 159,
+          "name": "item_throw_mindamage",
+          "param": 0,
+          "value": 15
+        },
+        {
+          "stat_id": 160,
+          "name": "item_throw_maxdamage",
+          "param": 0,
+          "value": 35
+        }
+      ],
+      "set_bonus_properties": [],
+      "set_bonus_mask": 0,
+      "superior_type": null,
+      "unique_type_id": null,
+      "set_item_id": null,
+      "prefix_id": null,
+      "suffix_id": null,
+      "rare_name_id1": 10,
+      "rare_name_id2": 122,
+      "rare_affix_ids": [
+        327,
+        6,
+        415,
+        390
+      ],
+      "rare_affix_slots": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "runeword_id": null,
+      "runeword_properties": []
+    },
+    {
+      "item_code": "rin",
+      "flags": {
+        "identified": true,
+        "socketed": false,
+        "starter_item": false,
+        "simple": false,
+        "ethereal": false,
+        "personalized": false,
+        "runeword": false,
+        "location_id": 0,
+        "equipped_slot": 0,
+        "position_x": 2,
+        "position_y": 0,
+        "panel_id": 1
+      },
+      "socket_children": [],
+      "extended": {
+        "unique_item_id": 12413165144,
+        "item_level": 98,
+        "quality": 8,
+        "quality_name": "Crafted",
+        "has_custom_graphics": true,
+        "gfx_index": 4,
+        "has_class_specific_data": false
+      },
+      "armor_data": null,
+      "quantity": 0,
+      "total_nr_of_sockets": 0,
+      "automod_id": null,
+      "magical_properties": [
+        {
+          "stat_id": 21,
+          "name": "mindamage",
+          "param": 0,
+          "value": 15
+        },
+        {
+          "stat_id": 22,
+          "name": "maxdamage",
+          "param": 0,
+          "value": 25
+        },
+        {
+          "stat_id": 23,
+          "name": "secondary_mindamage",
+          "param": 0,
+          "value": 15
+        },
+        {
+          "stat_id": 24,
+          "name": "secondary_maxdamage",
+          "param": 0,
+          "value": 25
+        },
+        {
+          "stat_id": 45,
+          "name": "poisonresist",
+          "param": 0,
+          "value": 11
+        },
+        {
+          "stat_id": 80,
+          "name": "item_magicbonus",
+          "param": 0,
+          "value": 9
+        },
+        {
+          "stat_id": 86,
+          "name": "item_healafterkill",
+          "param": 0,
+          "value": 3
+        },
+        {
+          "stat_id": 107,
+          "name": "item_singleskill",
+          "param": 271,
+          "value": 5,
+          "paired_value": 0
+        },
+        {
+          "stat_id": 127,
+          "name": "item_allskills",
+          "param": 0,
+          "value": 1
+        },
+        {
+          "stat_id": 159,
+          "name": "item_throw_mindamage",
+          "param": 0,
+          "value": 15
+        },
+        {
+          "stat_id": 160,
+          "name": "item_throw_maxdamage",
+          "param": 0,
+          "value": 25
+        }
+      ],
+      "set_bonus_properties": [],
+      "set_bonus_mask": 0,
+      "superior_type": null,
+      "unique_type_id": null,
+      "set_item_id": null,
+      "prefix_id": null,
+      "suffix_id": null,
+      "rare_name_id1": 4,
+      "rare_name_id2": 124,
+      "rare_affix_ids": [
+        371,
+        312,
+        415,
+        327
+      ],
+      "rare_affix_slots": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "runeword_id": null,
+      "runeword_properties": []
+    },
+    {
+      "item_code": "amu",
+      "flags": {
+        "identified": true,
+        "socketed": false,
+        "starter_item": false,
+        "simple": false,
+        "ethereal": false,
+        "personalized": false,
+        "runeword": false,
+        "location_id": 0,
+        "equipped_slot": 0,
+        "position_x": 3,
+        "position_y": 0,
+        "panel_id": 1
+      },
+      "socket_children": [],
+      "extended": {
+        "unique_item_id": 11944177544,
+        "item_level": 98,
+        "quality": 8,
+        "quality_name": "Crafted",
+        "has_custom_graphics": true,
+        "gfx_index": 2,
+        "has_class_specific_data": false
+      },
+      "armor_data": null,
+      "quantity": 0,
+      "total_nr_of_sockets": 0,
+      "automod_id": null,
+      "magical_properties": [
+        {
+          "stat_id": 7,
+          "name": "maxhp",
+          "param": 0,
+          "value": 37
+        },
+        {
+          "stat_id": 35,
+          "name": "magic_damage_reduction",
+          "param": 0,
+          "value": 4
+        },
+        {
+          "stat_id": 39,
+          "name": "fireresist",
+          "param": 0,
+          "value": 18
+        },
+        {
+          "stat_id": 41,
+          "name": "lightresist",
+          "param": 0,
+          "value": 18
+        },
+        {
+          "stat_id": 43,
+          "name": "coldresist",
+          "param": 0,
+          "value": 18
+        },
+        {
+          "stat_id": 45,
+          "name": "poisonresist",
+          "param": 0,
+          "value": 18
+        },
+        {
+          "stat_id": 80,
+          "name": "item_magicbonus",
+          "param": 0,
+          "value": 32
+        },
+        {
+          "stat_id": 127,
+          "name": "item_allskills",
+          "param": 0,
+          "value": 2
+        },
+        {
+          "stat_id": 329,
+          "name": "passive_fire_mastery",
+          "param": 0,
+          "value": 10
+        },
+        {
+          "stat_id": 330,
+          "name": "passive_ltng_mastery",
+          "param": 0,
+          "value": 10
+        },
+        {
+          "stat_id": 331,
+          "name": "passive_cold_mastery",
+          "param": 0,
+          "value": 10
+        },
+        {
+          "stat_id": 332,
+          "name": "passive_pois_mastery",
+          "param": 0,
+          "value": 10
+        }
+      ],
+      "set_bonus_properties": [],
+      "set_bonus_mask": 0,
+      "superior_type": null,
+      "unique_type_id": null,
+      "set_item_id": null,
+      "prefix_id": null,
+      "suffix_id": null,
+      "rare_name_id1": 0,
+      "rare_name_id2": 88,
+      "rare_affix_ids": [
+        386,
+        283,
+        134,
+        351
+      ],
+      "rare_affix_slots": [
+        0,
+        1,
+        3,
+        5
+      ],
+      "runeword_id": null,
+      "runeword_properties": []
+    },
+    {
+      "item_code": "lea",
+      "flags": {
+        "identified": true,
+        "socketed": false,
+        "starter_item": false,
+        "simple": false,
+        "ethereal": false,
+        "personalized": false,
+        "runeword": false,
+        "location_id": 0,
+        "equipped_slot": 0,
+        "position_x": 4,
+        "position_y": 0,
+        "panel_id": 1
+      },
+      "socket_children": [],
+      "extended": {
+        "unique_item_id": 33003586880,
+        "item_level": 98,
+        "quality": 8,
+        "quality_name": "Crafted",
+        "has_custom_graphics": false,
+        "gfx_index": 0,
+        "has_class_specific_data": false
+      },
+      "armor_data": {
+        "defense_raw": 28,
+        "defense_display": 18,
+        "durability": {
+          "max_durability": 24,
+          "current_durability": 14
+        }
+      },
+      "quantity": 0,
+      "total_nr_of_sockets": 0,
+      "automod_id": null,
+      "magical_properties": [
+        {
+          "stat_id": 7,
+          "name": "maxhp",
+          "param": 0,
+          "value": 86
+        },
+        {
+          "stat_id": 16,
+          "name": "item_armor_percent",
+          "param": 0,
+          "value": 167
+        },
+        {
+          "stat_id": 36,
+          "name": "damageresist",
+          "param": 0,
+          "value": 10
+        },
+        {
+          "stat_id": 37,
+          "name": "magicresist",
+          "param": 0,
+          "value": 15
+        },
+        {
+          "stat_id": 39,
+          "name": "fireresist",
+          "param": 0,
+          "value": 25
+        },
+        {
+          "stat_id": 41,
+          "name": "lightresist",
+          "param": 0,
+          "value": 25
+        },
+        {
+          "stat_id": 43,
+          "name": "coldresist",
+          "param": 0,
+          "value": 25
+        },
+        {
+          "stat_id": 45,
+          "name": "poisonresist",
+          "param": 0,
+          "value": 25
+        },
+        {
+          "stat_id": 78,
+          "name": "item_attackertakesdamage",
+          "param": 0,
+          "value": 47
+        },
+        {
+          "stat_id": 127,
+          "name": "item_allskills",
+          "param": 0,
+          "value": 2
+        },
+        {
+          "stat_id": 151,
+          "name": "item_aura",
+          "param": 123,
+          "value": 3
+        }
+      ],
+      "set_bonus_properties": [],
+      "set_bonus_mask": 0,
+      "superior_type": null,
+      "unique_type_id": null,
+      "set_item_id": null,
+      "prefix_id": null,
+      "suffix_id": null,
+      "rare_name_id1": 1,
+      "rare_name_id2": 77,
+      "rare_affix_ids": [
+        488,
+        143,
+        342,
+        286
+      ],
+      "rare_affix_slots": [
+        0,
+        1,
+        3,
+        5
+      ],
+      "runeword_id": null,
+      "runeword_properties": []
+    },
+    {
+      "item_code": "xvb",
+      "flags": {
+        "identified": true,
+        "socketed": false,
+        "starter_item": false,
+        "simple": false,
+        "ethereal": false,
+        "personalized": false,
+        "runeword": false,
+        "location_id": 0,
+        "equipped_slot": 0,
+        "position_x": 6,
+        "position_y": 0,
+        "panel_id": 1
+      },
+      "socket_children": [],
+      "extended": {
+        "unique_item_id": 20024583120,
+        "item_level": 98,
+        "quality": 8,
+        "quality_name": "Crafted",
+        "has_custom_graphics": false,
+        "gfx_index": 0,
+        "has_class_specific_data": false
+      },
+      "armor_data": {
+        "defense_raw": 50,
+        "defense_display": 40,
+        "durability": {
+          "max_durability": 14,
+          "current_durability": 14
+        }
+      },
+      "quantity": 0,
+      "total_nr_of_sockets": 0,
+      "automod_id": null,
+      "magical_properties": [
+        {
+          "stat_id": 16,
+          "name": "item_armor_percent",
+          "param": 0,
+          "value": 93
+        },
+        {
+          "stat_id": 21,
+          "name": "mindamage",
+          "param": 0,
+          "value": 20
+        },
+        {
+          "stat_id": 22,
+          "name": "maxdamage",
+          "param": 0,
+          "value": 30
+        },
+        {
+          "stat_id": 23,
+          "name": "secondary_mindamage",
+          "param": 0,
+          "value": 20
+        },
+        {
+          "stat_id": 24,
+          "name": "secondary_maxdamage",
+          "param": 0,
+          "value": 30
+        },
+        {
+          "stat_id": 44,
+          "name": "maxcoldresist",
+          "param": 0,
+          "value": 4
+        },
+        {
+          "stat_id": 74,
+          "name": "hpregen",
+          "param": 0,
+          "value": 5
+        },
+        {
+          "stat_id": 96,
+          "name": "item_fastermovevelocity",
+          "param": 0,
+          "value": 28
+        },
+        {
+          "stat_id": 127,
+          "name": "item_allskills",
+          "param": 0,
+          "value": 1
+        },
+        {
+          "stat_id": 159,
+          "name": "item_throw_mindamage",
+          "param": 0,
+          "value": 20
+        },
+        {
+          "stat_id": 160,
+          "name": "item_throw_maxdamage",
+          "param": 0,
+          "value": 30
+        },
+        {
+          "stat_id": 252,
+          "name": "item_replenish_durability",
+          "param": 0,
+          "value": 5
+        }
+      ],
+      "set_bonus_properties": [],
+      "set_bonus_mask": 0,
+      "superior_type": null,
+      "unique_type_id": null,
+      "set_item_id": null,
+      "prefix_id": null,
+      "suffix_id": null,
+      "rare_name_id1": 5,
+      "rare_name_id2": 99,
+      "rare_affix_ids": [
+        170,
+        194,
+        306,
+        363
+      ],
+      "rare_affix_slots": [
+        0,
+        1,
+        3,
+        5
+      ],
+      "runeword_id": null,
+      "runeword_properties": []
+    },
+    {
+      "item_code": "xml",
+      "flags": {
+        "identified": true,
+        "socketed": false,
+        "starter_item": false,
+        "simple": false,
+        "ethereal": false,
+        "personalized": false,
+        "runeword": false,
+        "location_id": 0,
+        "equipped_slot": 0,
+        "position_x": 8,
+        "position_y": 0,
+        "panel_id": 1
+      },
+      "socket_children": [],
+      "extended": {
+        "unique_item_id": 14629646000,
+        "item_level": 98,
+        "quality": 8,
+        "quality_name": "Crafted",
+        "has_custom_graphics": false,
+        "gfx_index": 0,
+        "has_class_specific_data": true
+      },
+      "armor_data": {
+        "defense_raw": 66,
+        "defense_display": 56,
+        "durability": {
+          "max_durability": 64,
+          "current_durability": 40
+        }
+      },
+      "quantity": 0,
+      "total_nr_of_sockets": 0,
+      "automod_id": 48,
+      "magical_properties": [
+        {
+          "stat_id": 16,
+          "name": "item_armor_percent",
+          "param": 0,
+          "value": 83
+        },
+        {
+          "stat_id": 43,
+          "name": "coldresist",
+          "param": 0,
+          "value": 28
+        },
+        {
+          "stat_id": 97,
+          "name": "item_nonclassskill",
+          "param": 449,
+          "value": 1,
+          "paired_value": 0
+        },
+        {
+          "stat_id": 118,
+          "name": "item_halffreezeduration",
+          "param": 0,
+          "value": 1
+        },
+        {
+          "stat_id": 127,
+          "name": "item_allskills",
+          "param": 0,
+          "value": 2
+        },
+        {
+          "stat_id": 152,
+          "name": "item_indesctructible",
+          "param": 0,
+          "value": 1
+        },
+        {
+          "stat_id": 329,
+          "name": "passive_fire_mastery",
+          "param": 0,
+          "value": 14
+        },
+        {
+          "stat_id": 330,
+          "name": "passive_ltng_mastery",
+          "param": 0,
+          "value": 14
+        },
+        {
+          "stat_id": 331,
+          "name": "passive_cold_mastery",
+          "param": 0,
+          "value": 14
+        },
+        {
+          "stat_id": 332,
+          "name": "passive_pois_mastery",
+          "param": 0,
+          "value": 14
+        },
+        {
+          "stat_id": 333,
+          "name": "passive_fire_pierce",
+          "param": 0,
+          "value": 14
+        },
+        {
+          "stat_id": 334,
+          "name": "passive_ltng_pierce",
+          "param": 0,
+          "value": 14
+        },
+        {
+          "stat_id": 335,
+          "name": "passive_cold_pierce",
+          "param": 0,
+          "value": 14
+        },
+        {
+          "stat_id": 336,
+          "name": "passive_pois_pierce",
+          "param": 0,
+          "value": 14
+        }
+      ],
+      "set_bonus_properties": [],
+      "set_bonus_mask": 0,
+      "superior_type": null,
+      "unique_type_id": null,
+      "set_item_id": null,
+      "prefix_id": null,
+      "suffix_id": null,
+      "rare_name_id1": 33,
+      "rare_name_id2": 82,
+      "rare_affix_ids": [
+        170,
+        95,
+        350,
+        364
+      ],
+      "rare_affix_slots": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "runeword_id": null,
+      "runeword_properties": []
+    },
+    {
+      "item_code": "zlb",
+      "flags": {
+        "identified": true,
+        "socketed": false,
+        "starter_item": false,
+        "simple": false,
+        "ethereal": false,
+        "personalized": false,
+        "runeword": false,
+        "location_id": 0,
+        "equipped_slot": 0,
+        "position_x": 0,
+        "position_y": 1,
+        "panel_id": 1
+      },
+      "socket_children": [],
+      "extended": {
+        "unique_item_id": 8706479816,
+        "item_level": 98,
+        "quality": 8,
+        "quality_name": "Crafted",
+        "has_custom_graphics": false,
+        "gfx_index": 0,
+        "has_class_specific_data": false
+      },
+      "armor_data": {
+        "defense_raw": 45,
+        "defense_display": 35,
+        "durability": {
+          "max_durability": 12,
+          "current_durability": 11
+        }
+      },
+      "quantity": 0,
+      "total_nr_of_sockets": 0,
+      "automod_id": null,
+      "magical_properties": [
+        {
+          "stat_id": 0,
+          "name": "strength",
+          "param": 0,
+          "value": 11
+        },
+        {
+          "stat_id": 16,
+          "name": "item_armor_percent",
+          "param": 0,
+          "value": 218
+        },
+        {
+          "stat_id": 107,
+          "name": "item_singleskill",
+          "param": 73,
+          "value": 2,
+          "paired_value": 0
+        },
+        {
+          "stat_id": 127,
+          "name": "item_allskills",
+          "param": 0,
+          "value": 1
+        },
+        {
+          "stat_id": 233,
+          "name": "item_resist_pois_perlevel",
+          "param": 0,
+          "value": 6
+        },
+        {
+          "stat_id": 329,
+          "name": "passive_fire_mastery",
+          "param": 0,
+          "value": 7
+        },
+        {
+          "stat_id": 330,
+          "name": "passive_ltng_mastery",
+          "param": 0,
+          "value": 7
+        },
+        {
+          "stat_id": 331,
+          "name": "passive_cold_mastery",
+          "param": 0,
+          "value": 7
+        },
+        {
+          "stat_id": 332,
+          "name": "passive_pois_mastery",
+          "param": 0,
+          "value": 7
+        }
+      ],
+      "set_bonus_properties": [],
+      "set_bonus_mask": 0,
+      "superior_type": null,
+      "unique_type_id": null,
+      "set_item_id": null,
+      "prefix_id": null,
+      "suffix_id": null,
+      "rare_name_id1": 37,
+      "rare_name_id2": 118,
+      "rare_affix_ids": [
+        174,
+        224,
+        308,
+        190
+      ],
+      "rare_affix_slots": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "runeword_id": null,
+      "runeword_properties": []
+    }
+  ],
+  "merc_items": []
+}

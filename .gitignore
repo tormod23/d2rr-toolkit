@@ -1,0 +1,64 @@
+# ============================================================
+# D2RR Toolkit .gitignore
+# ============================================================
+
+# --- General ---
+# ignore ALL "trailing ." hidden files and directories
+.*
+# Two exceptions from ths rule, files we need to be checked in
+!.gitignore
+!.pre-commit-config.yaml
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+*.egg
+venv/
+env/
+ENV/
+
+# --- Testing & Coverage ---
+htmlcov/
+
+# --- IDE / editor / configs ---
+# These are per-contributor tool settings, not project conventions.
+# Canonical project rules live in CONTRIBUTING.md + docs/ARCHITECTURE.md.
+*.swp
+*.swo
+
+# --- Temporary scripts ---
+tmp_*.py
+
+# --- Verification script output logs (regenerated on each run) ---
+*_output.txt
+
+# --- Database output ---
+*.db
+*.sqlite
+*.sqlite3
+
+# --- Logs ---
+*.log
+logs/
+
+### OS-specific files without leading dots
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+desktop.ini
+$RECYCLE.BIN/
+*.stackdump
+
+# macOS
+Icon
+
+# Linux / Editor backups
+*~

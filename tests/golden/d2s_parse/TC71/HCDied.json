@@ -1,0 +1,42 @@
+{
+  "header": {
+    "version": 105,
+    "file_size": 918,
+    "checksum": 1145287570,
+    "character_name": "HCDied",
+    "character_class": 7,
+    "character_class_name": "Warlock",
+    "level": 1,
+    "source_path": "tests/cases/TC71/HCDied.d2s",
+    "status_byte": 12,
+    "is_hardcore": true,
+    "died_flag": true,
+    "is_expansion": true,
+    "progression": 0,
+    "is_dead": true,
+    "highest_difficulty_completed": 0,
+    "gender": "male",
+    "title": ""
+  },
+  "stats": {
+    "strength": 15,
+    "energy": 20,
+    "dexterity": 20,
+    "vitality": 25,
+    "stat_points_remaining": 0,
+    "skill_points_remaining": 0,
+    "current_hp": 0.0,
+    "max_hp": 55.0,
+    "current_mana": 20.0,
+    "max_mana": 20.0,
+    "current_stamina": 86.0,
+    "max_stamina": 86.0,
+    "level": 1,
+    "experience": 0,
+    "gold_inventory": 0,
+    "gold_stash": 0
+  },
+  "mercenary": null,
+  "items": [],
+  "merc_items": []
+}

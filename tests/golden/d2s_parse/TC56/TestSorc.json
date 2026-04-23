@@ -1,0 +1,238 @@
+{
+  "header": {
+    "version": 105,
+    "file_size": 1000,
+    "checksum": 3807855279,
+    "character_name": "TestSorc",
+    "character_class": 1,
+    "character_class_name": "Sorceress",
+    "level": 1,
+    "source_path": "tests/cases/TC56/TestSorc.d2s",
+    "status_byte": 0,
+    "is_hardcore": false,
+    "died_flag": false,
+    "is_expansion": true,
+    "progression": 0,
+    "is_dead": false,
+    "highest_difficulty_completed": 0,
+    "gender": "female",
+    "title": ""
+  },
+  "stats": {
+    "strength": 10,
+    "energy": 35,
+    "dexterity": 25,
+    "vitality": 10,
+    "stat_points_remaining": 0,
+    "skill_points_remaining": 0,
+    "current_hp": 40.0,
+    "max_hp": 40.0,
+    "current_mana": 35.0,
+    "max_mana": 35.0,
+    "current_stamina": 74.0,
+    "max_stamina": 74.0,
+    "level": 1,
+    "experience": 0,
+    "gold_inventory": 0,
+    "gold_stash": 0
+  },
+  "mercenary": null,
+  "items": [
+    {
+      "item_code": "uit",
+      "flags": {
+        "identified": true,
+        "socketed": true,
+        "starter_item": false,
+        "simple": false,
+        "ethereal": false,
+        "personalized": false,
+        "runeword": false,
+        "location_id": 0,
+        "equipped_slot": 0,
+        "position_x": 0,
+        "position_y": 0,
+        "panel_id": 1
+      },
+      "socket_children": [],
+      "extended": {
+        "unique_item_id": 0,
+        "item_level": 41,
+        "quality": 3,
+        "quality_name": "Superior",
+        "has_custom_graphics": false,
+        "gfx_index": 0,
+        "has_class_specific_data": false
+      },
+      "armor_data": {
+        "defense_raw": 158,
+        "defense_display": 148,
+        "durability": {
+          "max_durability": 86,
+          "current_durability": 86
+        }
+      },
+      "quantity": 0,
+      "total_nr_of_sockets": 4,
+      "automod_id": null,
+      "magical_properties": [
+        {
+          "stat_id": 16,
+          "name": "item_armor_percent",
+          "param": 0,
+          "value": 2
+        },
+        {
+          "stat_id": 75,
+          "name": "item_maxdurability_percent",
+          "param": 0,
+          "value": 3
+        }
+      ],
+      "set_bonus_properties": [],
+      "set_bonus_mask": 0,
+      "superior_type": 0,
+      "unique_type_id": null,
+      "set_item_id": null,
+      "prefix_id": null,
+      "suffix_id": null,
+      "rare_name_id1": null,
+      "rare_name_id2": null,
+      "rare_affix_ids": [],
+      "rare_affix_slots": [],
+      "runeword_id": null,
+      "runeword_properties": []
+    },
+    {
+      "item_code": "uit",
+      "flags": {
+        "identified": true,
+        "socketed": true,
+        "starter_item": false,
+        "simple": false,
+        "ethereal": false,
+        "personalized": false,
+        "runeword": false,
+        "location_id": 0,
+        "equipped_slot": 0,
+        "position_x": 2,
+        "position_y": 0,
+        "panel_id": 1
+      },
+      "socket_children": [],
+      "extended": {
+        "unique_item_id": 0,
+        "item_level": 41,
+        "quality": 3,
+        "quality_name": "Superior",
+        "has_custom_graphics": false,
+        "gfx_index": 0,
+        "has_class_specific_data": false
+      },
+      "armor_data": {
+        "defense_raw": 158,
+        "defense_display": 148,
+        "durability": {
+          "max_durability": 86,
+          "current_durability": 86
+        }
+      },
+      "quantity": 0,
+      "total_nr_of_sockets": 4,
+      "automod_id": null,
+      "magical_properties": [
+        {
+          "stat_id": 16,
+          "name": "item_armor_percent",
+          "param": 0,
+          "value": 15
+        },
+        {
+          "stat_id": 75,
+          "name": "item_maxdurability_percent",
+          "param": 0,
+          "value": 12
+        }
+      ],
+      "set_bonus_properties": [],
+      "set_bonus_mask": 0,
+      "superior_type": 0,
+      "unique_type_id": null,
+      "set_item_id": null,
+      "prefix_id": null,
+      "suffix_id": null,
+      "rare_name_id1": null,
+      "rare_name_id2": null,
+      "rare_affix_ids": [],
+      "rare_affix_slots": [],
+      "runeword_id": null,
+      "runeword_properties": []
+    },
+    {
+      "item_code": "uit",
+      "flags": {
+        "identified": true,
+        "socketed": true,
+        "starter_item": false,
+        "simple": false,
+        "ethereal": false,
+        "personalized": false,
+        "runeword": false,
+        "location_id": 0,
+        "equipped_slot": 0,
+        "position_x": 4,
+        "position_y": 0,
+        "panel_id": 1
+      },
+      "socket_children": [],
+      "extended": {
+        "unique_item_id": 0,
+        "item_level": 41,
+        "quality": 3,
+        "quality_name": "Superior",
+        "has_custom_graphics": false,
+        "gfx_index": 0,
+        "has_class_specific_data": false
+      },
+      "armor_data": {
+        "defense_raw": 158,
+        "defense_display": 148,
+        "durability": {
+          "max_durability": 86,
+          "current_durability": 86
+        }
+      },
+      "quantity": 0,
+      "total_nr_of_sockets": 4,
+      "automod_id": null,
+      "magical_properties": [
+        {
+          "stat_id": 16,
+          "name": "item_armor_percent",
+          "param": 0,
+          "value": 12
+        },
+        {
+          "stat_id": 75,
+          "name": "item_maxdurability_percent",
+          "param": 0,
+          "value": 7
+        }
+      ],
+      "set_bonus_properties": [],
+      "set_bonus_mask": 0,
+      "superior_type": 0,
+      "unique_type_id": null,
+      "set_item_id": null,
+      "prefix_id": null,
+      "suffix_id": null,
+      "rare_name_id1": null,
+      "rare_name_id2": null,
+      "rare_affix_ids": [],
+      "rare_affix_slots": [],
+      "runeword_id": null,
+      "runeword_properties": []
+    }
+  ],
+  "merc_items": []
+}
