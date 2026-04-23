@@ -1648,7 +1648,22 @@ class ItemsParserMixin:
         return {"low_quality_type": reader.read(3)}
 
     def _read_qsd_normal(self) -> dict[str, Any]:
-        """Normal (q=2) - no extra bits. [BINARY_VERIFIED TC08/TC09/TC10]"""
+        """Normal (q=2) - no extra bits at the QSD layer.
+
+        [BINARY_VERIFIED TC08/TC09/TC10] covers the armor / weapon paths.
+        Alternate implementations treat rune codes matching
+        ``/^[rs]\\d{2}$/`` as a +1-bit QSD case, but in this parser the
+        matching bit is consumed one step later by
+        ``_parse_type_specific_data`` via the MISC branch:
+
+          - non-stackable runes (r##): the 1-bit
+            ``_unknown_misc_normal_prefix`` [BINARY_VERIFIED TC16/TC19]
+          - stackable runes (s##, Reimagined Rune Stack): the scan-forward
+            ``_read_quantity_before_terminator`` is self-aligning and
+            absorbs the bit implicitly [BINARY_VERIFIED TC67/TC69,
+            game-written ground truth, stacked-rune qty=4 and qty=7
+            recovered byte-exact]
+        """
         return {}
 
     def _read_qsd_superior(self) -> dict[str, Any]:

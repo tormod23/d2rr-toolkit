@@ -9,10 +9,192 @@ from __future__ import annotations
 import secrets
 from typing import TYPE_CHECKING
 
+from d2rr_toolkit.constants import HUFFMAN_TABLE
 from d2rr_toolkit.exceptions import D2SWriteError
 
 if TYPE_CHECKING:
     from d2rr_toolkit.models.character import ParsedItem
+
+
+# ── Huffman encoder -----------------------------------------------------------
+#
+# Mirror of parsers/huffman.py's decoder. HUFFMAN_TABLE already maps
+# char -> tree-path string where '0'/'1' characters denote the bit at each
+# tree step in the order a decoder would read them. The on-disk bits are
+# stored LSB-first within bytes, so the encoder must emit the table's
+# string in the same order the decoder reads them - character by character,
+# left-to-right within each character's bit string. Confirmed against
+# TC61 r01 blob via manual decode. [BV]
+
+_HUFFMAN_ENCODE: dict[str, tuple[int, ...]] = {
+    ch: tuple(1 if c == "1" else 0 for c in bits) for ch, bits in HUFFMAN_TABLE.items()
+}
+
+
+def encode_huffman_code(code: str) -> list[int]:
+    """Huffman-encode a type code + trailing space terminator into bits.
+
+    Produces the LSB-first bit sequence ready for insertion into an
+    item blob at bit position 53 (``ITEM_BIT_HUFFMAN_START``).
+
+    Args:
+        code: 3-character item code (e.g. ``"r01"``, ``"gmr"``). Trailing
+              space is appended automatically so callers pass just the
+              3-char code.
+
+    Returns:
+        List of 0/1 ints to write at successive bit positions.
+
+    Raises:
+        ValueError: if any character is not in the Huffman table.
+
+    [BV] cross-verified against our own decoder on the r01 blob from TC61.
+    """
+    bits: list[int] = []
+    for ch in code + " ":
+        enc = _HUFFMAN_ENCODE.get(ch)
+        if enc is None:
+            raise ValueError(
+                f"Character {ch!r} has no Huffman encoding. Valid glyphs: "
+                f"{sorted(_HUFFMAN_ENCODE.keys())}"
+            )
+        bits.extend(enc)
+    return bits
+
+
+# ── Simple-item synthesis -----------------------------------------------------
+#
+# Layout of a simple item in D2R v105 (see parsers/d2s_parser_items.py
+# _parse_simple_item and constants ITEM_BIT_*):
+#
+#   bit  4       identified flag = 1
+#   bit 21       simple flag = 1
+#   bit 23       "always-1" marker
+#   bit 32, 34   "always-1" padding
+#   bits 35-37   location_id (3 bits)
+#   bits 38-41   equipped_slot (4 bits)
+#   bits 42-45   position_x (4 bits)
+#   bits 46-49   position_y (4 bits)
+#   bits 50-52   panel_id (3 bits)
+#   bits 53+     Huffman-encoded (3-char code + ' ')
+#   next 1 bit   SIMPLE_ITEM_SOCKET_BIT_WIDTH (always 0 for non-socketed simples)
+#   next 9 bits  quantity field (only when is_quantity_item is True).
+#                Raw encoding: (display << 1) | 1  -- bit 0 is always 1.
+#   pad          to byte boundary
+#
+# Verified against TC61 r01 blob (10 00 a0 00 05 08 f4 7c 7f 32 01, 11 bytes):
+#   - 53+22 Huffman("r01 ")+1 socket_bit+9 qty = 85 bits, pad to 88 bits = 11 B [OK]
+#   - qty raw=19 -> display=9 matches parsed ParsedItem.display_quantity [OK]
+# [BV]
+
+
+def synthesize_simple_item_blob(
+    code: str,
+    *,
+    display_quantity: int = 1,
+    is_quantity_item: bool | None = None,
+    position_x: int = 0,
+    position_y: int = 0,
+    panel_id: int = 5,
+    location_id: int = 0,
+    equipped_slot: int = 0,
+    identified: bool = True,
+) -> bytes:
+    """Build a simple-item byte blob from scratch (no source template needed).
+
+    Intended for the rune cube-up feature and later gem synthesis. Emits
+    bits in the exact game-written layout so both our parser and any
+    other compliant D2R v105 reader can round-trip it.
+
+    Args:
+        code:              3-character item type code.
+        display_quantity:  User-visible stack size (1..99). Only written when
+                           ``is_quantity_item`` is True.
+        is_quantity_item:  Whether to emit the 9-bit quantity field. If
+                           ``None`` (default), autodetected from
+                           item_types.txt via
+                           :func:`get_item_type_db().is_quantity_item`.
+                           Pass ``True`` / ``False`` to override.
+        position_x/y:      Grid position (Section 5 ignores these but
+                           the bits are written anyway; 0/0 is fine).
+        panel_id:          5 = stash (Section 5 archive). [BV]
+        location_id:       0 = stored. [BV]
+        equipped_slot:     0 for Section 5 items. [BV]
+        identified:        True for Section 5 items (always). [BV]
+
+    Returns:
+        Byte blob suitable for attaching to a freshly-constructed
+        ``ParsedItem.source_data``.
+
+    Raises:
+        ValueError: if code has no Huffman encoding, display_quantity is
+                    out of range, or any position / panel / slot value
+                    exceeds its bit width.
+    """
+    if is_quantity_item is None:
+        from d2rr_toolkit.game_data.item_types import get_item_type_db
+
+        is_quantity_item = bool(get_item_type_db().is_quantity_item(code))
+
+    if is_quantity_item:
+        if not 1 <= display_quantity <= SECTION5_MAX_QUANTITY:
+            raise ValueError(
+                f"display_quantity {display_quantity} out of range "
+                f"(1..{SECTION5_MAX_QUANTITY}) for Section 5 simple item."
+            )
+    if not 0 <= position_x < 16:
+        raise ValueError(f"position_x {position_x} out of range (0..15)")
+    if not 0 <= position_y < 16:
+        raise ValueError(f"position_y {position_y} out of range (0..15)")
+    if not 0 <= panel_id < 8:
+        raise ValueError(f"panel_id {panel_id} out of range (0..7)")
+    if not 0 <= location_id < 8:
+        raise ValueError(f"location_id {location_id} out of range (0..7)")
+    if not 0 <= equipped_slot < 16:
+        raise ValueError(f"equipped_slot {equipped_slot} out of range (0..15)")
+
+    huff_bits = encode_huffman_code(code)
+
+    # Total bit count: 53 header + huffman + 1 socket bit + (9 qty if applicable)
+    total_bits = 53 + len(huff_bits) + 1 + (9 if is_quantity_item else 0)
+    total_bytes = (total_bits + 7) // 8
+    buf = bytearray(total_bytes)
+
+    # --- Header flags at fixed bit positions ---
+    if identified:
+        buf[0] |= 1 << 4  # bit 4 = identified
+    buf[2] |= 1 << 5  # bit 21 = simple  [fixed]
+    buf[2] |= 1 << 7  # bit 23 = always-1 marker  [BV]
+    buf[4] |= 1 << 0  # bit 32 = always-1 marker  [BV]
+    buf[4] |= 1 << 2  # bit 34 = always-1 marker  [BV]
+
+    # --- Location / position fields ---
+    write_bits(buf, ITEM_BIT_LOCATION, 3, location_id)
+    write_bits(buf, ITEM_BIT_EQUIPPED, 4, equipped_slot)
+    write_bits(buf, ITEM_BIT_POSITION_X, 4, position_x)
+    write_bits(buf, ITEM_BIT_POSITION_Y, 4, position_y)
+    write_bits(buf, ITEM_BIT_PANEL, 3, panel_id)
+
+    # --- Huffman code at bit 53 ---
+    pos = ITEM_BIT_HUFFMAN_START
+    for b in huff_bits:
+        if b:
+            buf[pos >> 3] |= 1 << (pos & 7)
+        pos += 1
+
+    # --- Post-Huffman 1 bit (SIMPLE_ITEM_SOCKET_BIT_WIDTH, always 0 for runes) ---
+    pos += 1  # write 0 - buf is already zero-filled
+
+    # --- 9-bit quantity field (is_quantity_item only) ---
+    if is_quantity_item:
+        raw = (display_quantity << 1) | 1  # bit 0 always 1, bits 1-8 = display
+        write_bits(buf, pos, 9, raw)
+        pos += 9
+
+    # Trailing bits beyond `pos` are already zero (buffer default), serving
+    # as byte-alignment padding. No further work needed.
+
+    return bytes(buf)
 
 # Item flag bit positions within the item binary blob (LSB-first).
 # These encode WHERE the item is stored (location, grid position, panel).

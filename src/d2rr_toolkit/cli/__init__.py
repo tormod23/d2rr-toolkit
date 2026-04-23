@@ -62,6 +62,7 @@ from . import _parse  # noqa: E402, F401
 from . import _inspect  # noqa: E402, F401
 from . import _archive  # noqa: E402, F401
 from . import _stash  # noqa: E402, F401
+from . import _cube  # noqa: E402, F401
 
 
 # ──────────────────────────────────────────────────────────────
