@@ -35,9 +35,13 @@ from d2rr_toolkit.constants import (
     EXT_WIDTH_QUALITY,
     EXT_WIDTH_UNIQUE_ID,
     ARMOR_SAVE_ADD_DEFENSE,
+    ARMOR_WIDTH_CUR_DUR,
     ARMOR_WIDTH_DEFENSE,
     ARMOR_WIDTH_DURABILITY,
-    ARMOR_WIDTH_UNKNOWN_POST_DUR,
+    ARMOR_WIDTH_MAX_DUR,
+    WEAPON_WIDTH_CUR_DUR,
+    WEAPON_WIDTH_MAX_DUR,
+    WEAPON_WIDTH_POST_DUR,
     ITEM_STATS_TERMINATOR,
     SECTION_MARKER_ITEMS,
     SIMPLE_ITEM_SOCKET_BIT_WIDTH,
@@ -1870,11 +1874,14 @@ class ItemsParserMixin:
                 # branch needs the same ``if max_dur > 0`` gating
                 # applied to the melee-weapon path.  The ``[BV TC33]``
                 # marker remains accurate for the current data.
-                throw_max_dur = reader.read(8)  # [BINARY_VERIFIED TC33]
-                throw_cur_dur = reader.read(8)  # [BINARY_VERIFIED TC33]
-                _throw_unknown_post_dur = reader.read(
-                    2
-                )  # purpose unknown [BV], always=2 [BV]
+                throw_max_dur = reader.read(WEAPON_WIDTH_MAX_DUR)  # 8 bits [BV TC33]
+                throw_cur_dur = reader.read(WEAPON_WIDTH_CUR_DUR)  # 8 bits [BV TC33]
+                # Weapon-specific 2-bit tail after cur_dur. [BV TC33 width]; the
+                # VALUE can be 0b00/0b01/0b10 across the fixture corpus, with
+                # 0b10 ("always=2") being the common case for throwing weapons
+                # specifically - see constants.WEAPON_WIDTH_POST_DUR for the
+                # distribution across all 429 weapon fixtures.
+                _throw_weapon_post_dur = reader.read(WEAPON_WIDTH_POST_DUR)
                 _throw_qty = reader.read(9)  # [BINARY_VERIFIED TC33] quantity
                 if socketed:
                     self._total_nr_of_sockets = reader.read(
@@ -1919,13 +1926,16 @@ class ItemsParserMixin:
             # 46-byte source_data; see the regression test in
             # ``tests/test_phase_blade_durability.py`` for the
             # full derivation and the expected-vs-actual walkthrough.
-            max_dur = reader.read(8)  # [BINARY_VERIFIED TC09/TC33]
+            max_dur = reader.read(WEAPON_WIDTH_MAX_DUR)  # 8 bits [BV TC09/TC33]
             if max_dur > 0:
-                cur_dur = reader.read(8)  # [BINARY_VERIFIED TC09/TC33]
-                _unknown_post_dur = reader.read(ARMOR_WIDTH_UNKNOWN_POST_DUR)  # 2 bits
+                cur_dur = reader.read(WEAPON_WIDTH_CUR_DUR)  # 8 bits [BV TC09/TC33]
+                # [BV TC33 width]; see constants.WEAPON_WIDTH_POST_DUR for the
+                # observed value distribution - non-zero in 38 / 429 items, so
+                # these bits are NOT padding and cannot be folded into cur_dur.
+                _weapon_post_dur = reader.read(WEAPON_WIDTH_POST_DUR)
             else:
                 cur_dur = 0
-                _unknown_post_dur = reader.read(1)  # 1 bit [BV Lightsabre]
+                _weapon_post_dur = reader.read(1)  # 1 bit [BV Lightsabre]
             if socketed:
                 self._total_nr_of_sockets = reader.read(
                     4
@@ -2110,9 +2120,23 @@ class ItemsParserMixin:
         ## Binary Layout (all [BV])
 
         Base fields (ALL armor items):
-          defense(11) + max_dur(8) + cur_dur(8) + unknown_post_dur(2) = 29 bits
+          defense(11) + max_dur(8) + cur_dur(10) = 29 bits
 
-        Socketed items add variable-width socket data after unknown_post_dur:
+        The cur_dur field is read as a single 10-bit unsigned integer.
+        Empirically the upper 2 bits are always zero across every armor
+        item in the test corpus (612 items) because the base item
+        durability is capped at 250 in Reimagined, but the 10-bit
+        encoding is the canonical interpretation - it avoids inventing
+        a "2 unknown bits" gap that an otherwise densely-packed
+        format would be surprising to contain.
+
+        Note: the WEAPON branch uses a different layout (max(8) +
+        cur(8) + post(2)) because weapons DO exhibit non-zero values
+        in those trailing 2 bits (38 out of 429 weapon items),
+        meaning those bits carry semantics that cannot be absorbed
+        into cur_dur without producing impossible cur > max values.
+
+        Socketed items add variable-width socket data after the durability block:
 
           +----------------------------+-------------------------------------------+
           | Item Type                  | Socket Data Layout                        |
@@ -2136,18 +2160,14 @@ class ItemsParserMixin:
         # [INVARIANT] Every armor row in Reimagined 3.0.7 armor.txt
         # has ``durability > 0`` (0 of 218 rows hit the "no durability
         # at all" sentinel).  The armor format therefore always carries
-        # the full 18-bit ``max_dur + cur_dur + unknown_post_dur`` block,
-        # unlike weapons where Phase Blade (``7cr``, durability=0)
-        # omits ``cur_dur`` - see the melee-weapon branch upstream for
-        # the variable-width rule.  If a mod update ever introduces a
-        # ``durability=0`` armor, apply the same ``if max_dur > 0``
-        # gating here.
+        # the full 18-bit ``max_dur + cur_dur`` block, unlike weapons
+        # where Phase Blade (``7cr``, durability=0) omits ``cur_dur``
+        # - see the melee-weapon branch upstream for the variable-width
+        # rule.  If a mod update ever introduces a ``durability=0``
+        # armor, apply the same ``if max_dur > 0`` gating here.
         defense_raw = reader.read(ARMOR_WIDTH_DEFENSE)  # 11 bits [BV]
-        max_dur = reader.read(ARMOR_WIDTH_DURABILITY)  #  8 bits [BV]
-        cur_dur = reader.read(ARMOR_WIDTH_DURABILITY)  #  8 bits [BV]
-        _unknown_post_dur = reader.read(
-            ARMOR_WIDTH_UNKNOWN_POST_DUR
-        )  # purpose unknown [BV], 2 bits [BV]
+        max_dur = reader.read(ARMOR_WIDTH_MAX_DUR)  #  8 bits [BV]
+        cur_dur = reader.read(ARMOR_WIDTH_CUR_DUR)  # 10 bits [BV TC-wide, upper 2 always 0]
         if socketed:
             is_shield = db.is_shield(item_code)
             if is_shield and not runeword and quality not in (3, 7):

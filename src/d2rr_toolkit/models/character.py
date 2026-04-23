@@ -325,14 +325,31 @@ class ItemExtendedHeader(BaseModel):
 class ItemDurability(BaseModel):
     """Item durability fields.
 
+    The numerical values stored here are independent of the on-disk
+    encoding, but the encoding itself differs by item category - see
+    constants.ARMOR_WIDTH_MAX_DUR / ARMOR_WIDTH_CUR_DUR for armor and
+    WEAPON_WIDTH_MAX_DUR / WEAPON_WIDTH_CUR_DUR for weapons.
+
     [BV]:
-    - Width: 8 bits each (NOT 9 as spec stated)
+    - Armor encoding: max_dur(8) + cur_dur(10), [BV] 612 armor items
+      across every fixture - upper 2 bits of cur_dur always 0 because
+      base durability is capped at 250 in Reimagined.
+    - Weapon encoding: max_dur(8) + cur_dur(8) + 2-bit weapon_post_dur
+      tail, [BV] TC09/TC33. The trailing 2 bits can be non-zero (38
+      of 429 weapon items across the fixtures), so they cannot be
+      folded into cur_dur.
     - max_dur at type_start+11, cur_dur at type_start+19
     - Confirmed by TC08 (12/12), TC09 (250/250), TC10 (10/12)
     """
 
     max_durability: int = Field(description="Maximum durability. 8 bits. [BINARY_VERIFIED]")
-    current_durability: int = Field(description="Current durability. 8 bits. [BINARY_VERIFIED]")
+    current_durability: int = Field(
+        description=(
+            "Current durability as an integer. Stored as a 10-bit field on armor "
+            "and an 8-bit field on weapons; callers see only the decoded value. "
+            "[BINARY_VERIFIED]"
+        )
+    )
 
     @property
     def is_indestructible(self) -> bool:

@@ -444,25 +444,74 @@ ARMOR_OFFSET_MAX_DUR: int = 11
 ARMOR_OFFSET_CUR_DUR: int = 19
 """cur_durability field offset from type_start. [BV]."""
 
-ARMOR_WIDTH_DURABILITY: int = 8
-"""Durability field width in bits (both max and cur). [BV].
-Spec said 9 bits - actual binary shows 8 bits.
-Evidence: TC08 (12/12), TC09 (250/250), TC10 (10/12) all confirm 8 bits.
+ARMOR_WIDTH_MAX_DUR: int = 8
+"""max_durability field width in bits. [BV].
+
+Evidence: TC08 (max=12), TC09 (max=250), TC10 (max=12) all decode with
+8 bits. The Reimagined armor.txt caps base durability at 250 by design
+(verified across 523 armor+weapon rows), so the field never saturates
+the 8-bit space - 250 sits at 98% of the 0..255 range.
 """
 
-ARMOR_OFFSET_UNKNOWN_POST_DUR: int = 27
-"""2 unknown bits after cur_durability.
+ARMOR_WIDTH_CUR_DUR: int = 10
+"""cur_durability field width in bits. [BV].
 
-[UNKNOWN] Always observed as 0 across the TC fixtures; semantic
-meaning not established. Writers reserve the bits as-is - do not
-rely on the observed zero value as a contract.
+Evidence: across 612 armor items parsed from every TC fixture, the
+upper 2 bits of this field are ALWAYS zero - consistent with the
+underlying value fitting in 8 bits because ``cur_dur <= max_dur <= 250``
+for all fixture data. The 10-bit layout is adopted as the format spec
+because it is observationally equivalent to ``8 + 2 (padding)`` for
+every item we have seen, and a 10-bit single-field encoding requires
+no appeal to "unknown" / "reserved" bits in an otherwise densely-
+packed binary.
+
+The weapon branch uses a DIFFERENT layout - ``8 + 8 + 2`` where the
+trailing 2 bits CAN be non-zero (observed 0b01 and 0b10 in 38 / 429
+weapon items across the fixtures) and therefore cannot be absorbed
+into a 10-bit cur_dur without producing impossible cur > max values.
+See ``parsers/d2s_parser_items.py`` weapon-path comments.
 """
 
-ARMOR_WIDTH_UNKNOWN_POST_DUR: int = 2
-"""Width of unknown post-durability field.
+# Total width of the cur_dur read (armor-only).
+ARMOR_WIDTH_DURABILITY: int = ARMOR_WIDTH_MAX_DUR
+"""Back-compat alias. Prefer ``ARMOR_WIDTH_MAX_DUR`` at new call sites.
 
-[BV] width confirmed against test fixtures. [UNKNOWN] semantic
-meaning of the field's value is not yet established.
+The old name bundled "both max and cur are 8 bits" into a single
+constant. That was correct observationally but implied a symmetry
+that doesn't hold once cur_dur is read as a 10-bit field. New code
+should name the field it reads explicitly.
+"""
+
+
+# ============================================================
+# WEAPON-TYPE ITEM FIELDS
+# ============================================================
+
+WEAPON_WIDTH_MAX_DUR: int = 8
+"""max_durability field width on weapons. [BV TC09/TC33]."""
+
+WEAPON_WIDTH_CUR_DUR: int = 8
+"""cur_durability field width on weapons. [BV TC09/TC33].
+
+Weapons use 8 bits for cur_dur - NOT 10 like armor does. The weapon
+branch has 2 trailing bits after cur_dur (``WEAPON_WIDTH_POST_DUR``)
+that can be non-zero, so they cannot be absorbed into a 10-bit
+cur_dur without producing impossible cur > max values. 38 of 429
+weapon items across the fixtures show non-zero trailing bits.
+"""
+
+WEAPON_WIDTH_POST_DUR: int = 2
+"""2 bits immediately after weapon cur_dur. [BV TC33] width.
+
+[PARTIAL] Semantic meaning not fully established: observed values
+are 0b00 (91.1%), 0b01 (2.3%), and 0b10 (6.5%) across 429 weapon
+items, with 0b11 never observed. The distribution is correlated
+with throwing vs melee status in ways the current analysis has not
+fully decoded. Writers preserve these bits verbatim.
+
+When ``max_dur == 0`` (Phase Blade / ``7cr``), cur_dur is omitted
+and this field SHRINKS to 1 bit. See the weapon-path parse code
+for the ``max_dur > 0`` gating.
 """
 
 
