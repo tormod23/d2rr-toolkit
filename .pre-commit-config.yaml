@@ -18,14 +18,16 @@ repos:
     rev: v4.6.0
     hooks:
       - id: trailing-whitespace
+        exclude: '\.(d2s|d2i)(\..+)?$'
       - id: end-of-file-fixer
+        exclude: '\.(d2s|d2i)(\..+)?$'
       - id: check-yaml
       - id: check-toml
       - id: check-added-large-files
         args: ["--maxkb=1024"]
       - id: mixed-line-ending
         args: ["--fix=lf"]
-
+        exclude: '\.(d2s|d2i)(\..+)?$'
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.5.0
     hooks:
@@ -43,4 +45,3 @@ repos:
   #         - "types-Pillow"
   #       args: ["--config-file=pyproject.toml", "src/"]
   #       pass_filenames: false
-
