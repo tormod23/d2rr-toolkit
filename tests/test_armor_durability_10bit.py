@@ -40,6 +40,7 @@ and tests/test_phase_blade_durability.py). This test covers armor only.
   §3  Passive round-trip: parse + write with no mutation produces a
       byte-identical file for TC08 (canonical armor fixture).
 """
+
 from __future__ import annotations
 
 import sys
@@ -145,8 +146,7 @@ def test_S1_every_armor_cur_dur_fits_in_8_bits():
         if it.armor_data.durability.current_durability > 255
     ]
     assert not too_big, (
-        "Armor cur_dur > 255 observed - the 10-bit encoding is now "
-        f"load-bearing: {too_big[:5]}"
+        "Armor cur_dur > 255 observed - the 10-bit encoding is now " f"load-bearing: {too_big[:5]}"
     )
 
 
@@ -211,13 +211,8 @@ def test_S3_tc08_passive_roundtrip_byte_exact(tmp_path: Path) -> None:
     # The writer refreshes checksum (0x0C..0x0F) and timestamp (0x20..0x23).
     # Tolerate those offsets, require byte-identity everywhere else.
     tolerated = set(range(0x0C, 0x10)) | set(range(0x20, 0x24))
-    diffs = [
-        i for i, (a, b) in enumerate(zip(src, dst)) if a != b and i not in tolerated
-    ]
+    diffs = [i for i, (a, b) in enumerate(zip(src, dst)) if a != b and i not in tolerated]
     assert not diffs, (
-        f"{len(diffs)} byte diffs beyond checksum+timestamp - "
-        f"first at offsets {diffs[:8]}"
+        f"{len(diffs)} byte diffs beyond checksum+timestamp - " f"first at offsets {diffs[:8]}"
     )
-    assert len(src) == len(dst), (
-        f"file size changed: src={len(src)} dst={len(dst)}"
-    )
+    assert len(src) == len(dst), f"file size changed: src={len(src)} dst={len(dst)}"

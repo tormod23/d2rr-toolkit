@@ -245,9 +245,9 @@ def test_live_stash_unidentified_heavy_boots_if_present(dbs):
                     identified=False,
                 )
                 # Must be the base name "Heavy Boots", never the set name.
-                assert unid_name == names.get_base_item_name("vbt"), (
-                    f"live unid leak: {unid_name!r}"
-                )
+                assert unid_name == names.get_base_item_name(
+                    "vbt"
+                ), f"live unid leak: {unid_name!r}"
                 # And with identified=True, we'd get the set label.
                 id_name = names.build_display_name(
                     it.item_code,
@@ -345,9 +345,9 @@ def test_archive_refuses_unidentified_item(tmp_path):
             extract_from_d2i(work, tab_idx, item_idx, db, display_name="test")
         # And the file must be byte-identical to the original (no
         # backup written, no modification).
-        assert work.read_bytes() == live.read_bytes(), (
-            "Refused archive still mutated the stash file"
-        )
+        assert (
+            work.read_bytes() == live.read_bytes()
+        ), "Refused archive still mutated the stash file"
     finally:
         db.close()
 
@@ -356,4 +356,3 @@ if __name__ == "__main__":
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     pytest.main([__file__, "-v"])
-

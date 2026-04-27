@@ -45,6 +45,7 @@ import struct
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from d2rr_toolkit.constants import D2I_TAB_GOLD_MAX
 from d2rr_toolkit.models.character import ParsedItem
 from d2rr_toolkit.parsers.d2s_parser import D2SParser
 
@@ -76,12 +77,19 @@ class SharedStashTab:
 
     [BINARY_VERIFIED 2026-04-12: Tab 0 has 36 JM + 0 extra; Tab 3 has
      27 JM (1 parse failure) + 10 extra; Tab 4 has 34 JM + 8 extra.]
+
+    Per-tab ``gold`` is read from offset 0x0C of the page header (u32 LE).
+    Reimagined v105 caps gold at 2,500,000 per tab; the parser logs a
+    warning if a parsed value exceeds that cap. The gold field is purely
+    informational on read - the writer preserves the original page header
+    bytes verbatim, so gold round-trips automatically.
     """
 
     tab_index: int
     items: list[ParsedItem] = field(default_factory=list)
     jm_count_byte_offset: int = 0  # byte offset of the JM count uint16 in the file
     jm_item_count: int = 0  # number of items that came from the JM-counted region
+    gold: int = 0  # per-tab gold (u32 LE at page header offset 0x0C). [BV]
 
 
 @dataclass
@@ -202,6 +210,23 @@ class D2IParser:
             jm_offset = pos + _D2I_HEADER_SIZE
             section_end = pos + section_size
 
+            # Per-page gold lives at offset 0x0C of the page header. Read
+            # it before the JM check so we can observe / log gold even on
+            # pages we end up skipping (e.g. the v105 trailing audit page,
+            # which has gold=0 by convention).
+            page_gold = struct.unpack_from("<I", data, pos + 0x0C)[0]
+            if page_gold > D2I_TAB_GOLD_MAX:
+                logger.warning(
+                    "Section %d at byte 0x%X: gold=%d exceeds the per-tab "
+                    "cap of %d. The game enforces this cap on save; the "
+                    "value will be preserved verbatim by the writer but "
+                    "may be silently re-clamped on next in-game save.",
+                    tab_index,
+                    pos,
+                    page_gold,
+                    D2I_TAB_GOLD_MAX,
+                )
+
             if data[jm_offset : jm_offset + 2] != _JM_MARKER:
                 logger.warning(
                     "Section %d at byte 0x%X: expected 'JM' at 0x%X but "
@@ -244,6 +269,7 @@ class D2IParser:
                 items=items,
                 jm_count_byte_offset=jm_count_offset,
                 jm_item_count=jm_item_count,
+                gold=page_gold,
             )
             stash.tabs.append(tab)
             logger.info(
@@ -281,5 +307,3 @@ class D2IParser:
                 f"Expected 0x{_D2I_SIGNATURE:08X}. "
                 f"Is this a valid D2R SharedStash file?"
             )
-
-

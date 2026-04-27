@@ -65,7 +65,7 @@ def _build_d2i_with_trailing_jm() -> bytes:
         section = bytearray(_EMPTY_SECTION_SIZE)
         struct.pack_into("<I", section, 0x00, _D2I_SIGNATURE)
         struct.pack_into("<I", section, 0x10, _EMPTY_SECTION_SIZE)
-        section[_SECTION_HEADER_SIZE:_SECTION_HEADER_SIZE + 2] = b"JM"
+        section[_SECTION_HEADER_SIZE : _SECTION_HEADER_SIZE + 2] = b"JM"
         # uint16 count at offset 66 stays zero.
         out.extend(section)
 
@@ -230,8 +230,5 @@ def test_roundtrip_trailing_size_is_148_bytes(
     last_end = built_sections[-1].header_offset + built_sections[-1].section_size
     built_trailing = built[last_end:]
     assert len(built_trailing) == _TRAILING_SIZE, (
-        f"Trailing block size drifted: expected {_TRAILING_SIZE}, got "
-        f"{len(built_trailing)}."
+        f"Trailing block size drifted: expected {_TRAILING_SIZE}, got " f"{len(built_trailing)}."
     )
-
-

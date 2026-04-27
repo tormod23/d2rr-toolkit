@@ -482,5 +482,3 @@ def load_sets(
         source_versions=source_versions,
         cache_dir=cache_dir,
     )
-
-

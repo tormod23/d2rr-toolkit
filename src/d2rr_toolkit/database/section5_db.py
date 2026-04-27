@@ -755,5 +755,3 @@ def open_section5_db(
     if db_path is None:
         db_path = default_archive_db_path(mode, base_dir=base_dir)
     return Section5Database(db_path, mode=mode)
-
-

@@ -1357,5 +1357,3 @@ def _find_subsets_summing_to(
                 if len(matches) >= 2:
                     return matches
     return matches
-
-

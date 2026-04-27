@@ -171,5 +171,3 @@ see [`SECURITY.md`](SECURITY.md) - report privately first.
 
 See also [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) for community
 standards and enforcement.
-
-

@@ -253,5 +253,3 @@ def load_charstats(
         source_versions=source_versions,
         cache_dir=cache_dir,
     )
-
-

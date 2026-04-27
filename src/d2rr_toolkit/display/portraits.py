@@ -95,5 +95,3 @@ def merc_portrait_path(hireling_class: str) -> str | None:
     if not hireling_class:
         return None
     return _MERC_PORTRAITS.get(hireling_class)
-
-

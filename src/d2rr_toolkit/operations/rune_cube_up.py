@@ -125,9 +125,7 @@ def _validate_rune_code(code: str) -> str:
     """Normalise and validate a rune code string."""
     normalised = (code or "").strip().lower()
     if not _RUNE_CODE_RE.match(normalised):
-        raise InvalidRuneCodeError(
-            f"Not a classic rune code: {code!r}. Expected r01..r33."
-        )
+        raise InvalidRuneCodeError(f"Not a classic rune code: {code!r}. Expected r01..r33.")
     return normalised
 
 
@@ -212,9 +210,7 @@ def _remove_runes(tab, code: str, amount: int) -> None:
             remaining = 0
     if remaining > 0:
         # Defensive: caller should have validated counts upstream.
-        raise NotEnoughRunesError(
-            f"Wanted to remove {amount} {code}, short by {remaining}."
-        )
+        raise NotEnoughRunesError(f"Wanted to remove {amount} {code}, short by {remaining}.")
 
 
 def _add_runes(tab, code: str, amount: int) -> None:
@@ -439,7 +435,12 @@ def cube_up_bulk(
         result.added[next_code] = result.added.get(next_code, 0) + pairs
         logger.info(
             "cube_up_bulk: %d %s -> %d %s (kept %d, capped %d)",
-            pairs * 2, code, pairs, next_code, keep, overflow,
+            pairs * 2,
+            code,
+            pairs,
+            next_code,
+            keep,
+            overflow,
         )
 
     result.remaining = count_runes_in_section5(stash)
@@ -547,6 +548,7 @@ def cube_up_file_single(
         :class:`CubeUpFileResult` with the summary, backup path, and
         output path.
     """
+
     def _do(stash):
         return cube_up_single(stash, rune_code, pairs)
 
@@ -573,6 +575,7 @@ def cube_up_file_bulk(
     Returns:
         :class:`CubeUpFileResult`.
     """
+
     def _do(stash):
         return cube_up_bulk(stash, min_keep=min_keep)
 

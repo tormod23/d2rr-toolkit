@@ -881,5 +881,3 @@ def load_item_types(
         source_versions=source_versions,
         cache_dir=cache_dir,
     )
-
-

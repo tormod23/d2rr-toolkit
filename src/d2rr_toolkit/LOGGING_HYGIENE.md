@@ -167,5 +167,3 @@ fails the run if any future change regresses the pattern.
   <https://docs.python.org/3/library/logging.handlers.html#logging.NullHandler>
 * `requests` library `__init__.py` - canonical NullHandler
   reference implementation.
-
-

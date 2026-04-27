@@ -37,5 +37,3 @@ Short map of where things live and why.
 1. Create `cases/TCNN/` with your fixture file(s) + a `README.md` describing the scenario.
 2. If the fixture is a canonical `.d2s` character file and you want it in the parser snapshot runner, run `UPDATE_SNAPSHOTS=1 pytest tests/test_d2s_parse_snapshot.py::test_parse_snapshot_matches_golden[TCNN/YourChar.d2s]` to create the matching golden under `golden/d2s_parse/TCNN/`.
 3. Run [`test_roundtrip_all_fixtures.py`](test_roundtrip_all_fixtures.py) - every fixture must round-trip byte-exact.
-
-

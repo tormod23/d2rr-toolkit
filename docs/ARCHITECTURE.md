@@ -174,5 +174,3 @@ land a matching fixture + entry in `VERIFICATION_LOG.md`.
 - Every file that touches game-data files on disk goes through
   `adapters/casc` - no direct `open(.../reimagined/...)` calls
   anywhere else.
-
-

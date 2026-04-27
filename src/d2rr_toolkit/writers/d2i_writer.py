@@ -267,6 +267,9 @@ class D2IWriter:
             (the exact bug that bricked ModernSharedStashSoftCoreV2.d2i)
           - Section sizes don't sum to ``len(built) - trailer_bytes``
           - Number of sections differs from the source file
+          - Reimagined audit block (Section 6) drifted from the source
+            (the writer is supposed to copy it verbatim as part of the
+            trailer; any mismatch indicates a writer bug)
 
         The check is cheap: a single re-parse plus constant-time asserts.
         """
@@ -284,9 +287,20 @@ class D2IWriter:
 
         for idx, sec in enumerate(built_sections):
             if sec.item_count == 0 and sec.section_size != D2I_EMPTY_SECTION_SIZE:
-                # Only fail on sections THIS writer produced. Verbatim-copied
-                # sections may carry pre-existing source corruption - refusing
-                # to write a recovery pass over such a file would be worse.
+                # Dual policy on `jm_count=0, section_size != 68`:
+                #
+                #   - PRODUCED by us (touched): the splice path is
+                #     supposed to emit a canonical 68-byte empty section
+                #     when a tab becomes empty. Anything else means a
+                #     splice bug and we refuse to emit, so no corrupted
+                #     bytes ever hit disk.
+                #
+                #   - VERBATIM-copied from source (untouched): the
+                #     legacy state predates this check. Refusing to emit
+                #     would strand the user on a partially-broken file
+                #     with no toolkit operations possible. Warn instead.
+                #
+                # Pinned by test_d2i_writer_legacy_malformed_sections.py.
                 if idx in self._touched_sections:
                     raise D2IWriterIntegrityError(
                         f"Section {idx} has jm_count=0 but section_size="
@@ -330,6 +344,71 @@ class D2IWriter:
             raise D2IWriterIntegrityError(
                 f"Trailer size changed: source={src_trailer} bytes, "
                 f"built={built_trailer} bytes. Splice arithmetic is wrong."
+            )
+
+        # ── Section 6 (Reimagined audit block) drift check ──────────────
+        # The audit block is a 7th page (marker 0xC0EDEAC0 instead of
+        # 'JM') the v105 game writes after the six tab pages. The writer
+        # never edits it - the trailer-copy path picks it up verbatim
+        # along with anything else past the last JM section. If the
+        # built file's audit-block bytes differ from the source's, the
+        # writer corrupted the page somewhere along the way; refuse to
+        # emit so the SharedStash isn't silently broken.
+        #
+        # Pinned by tests/test_section6_invariance.py (TC74 A-E): item
+        # add / remove / move never touches Section 6 in-game, so the
+        # toolkit must not touch it either.
+        self._check_section6_preserved(built)
+
+    def _check_section6_preserved(self, built: bytes) -> None:
+        """Verify the Reimagined audit block is byte-identical in source and built.
+
+        No-op when the source has no audit block (vanilla D2R or other
+        non-Reimagined files - the toolkit's writer can still emit those,
+        we just have nothing to compare).
+        """
+        # Local import: section6 lives in `analysis/`, which would create
+        # an import cycle if pulled in at module top.
+        from d2rr_toolkit.analysis.section6 import extract_section6
+
+        src_s6 = extract_section6(self._source)
+        if src_s6 is None:
+            return  # nothing to check (vanilla D2R or malformed Reimagined)
+
+        built_s6 = extract_section6(built)
+        if built_s6 is None:
+            raise D2IWriterIntegrityError(
+                "Source has a Reimagined audit block but the built output "
+                "does not. The writer dropped Section 6 - refusing to emit "
+                "a file that would brick the SharedStash."
+            )
+
+        src_page = self._source[src_s6.file_offset : src_s6.file_offset + src_s6.page_size]
+        built_page = built[built_s6.file_offset : built_s6.file_offset + built_s6.page_size]
+
+        if src_page != built_page:
+            import hashlib
+
+            src_hash = hashlib.sha256(src_page).hexdigest()[:16]
+            built_hash = hashlib.sha256(built_page).hexdigest()[:16]
+            # Pinpoint the first byte that diverges so a future
+            # investigation has a starting point.
+            first_diff = next(
+                (
+                    i
+                    for i in range(min(len(src_page), len(built_page)))
+                    if src_page[i] != built_page[i]
+                ),
+                -1,
+            )
+            raise D2IWriterIntegrityError(
+                f"Section 6 (Reimagined audit block) drifted between "
+                f"source and built output: src len={len(src_page)} "
+                f"hash={src_hash}, built len={len(built_page)} "
+                f"hash={built_hash}, first diff at offset "
+                f"{first_diff if first_diff >= 0 else 'len-only'}. "
+                f"The writer must preserve the audit page verbatim "
+                f"(see TC74). Refusing to emit."
             )
 
     def _validate_section5_no_duplicates(self) -> None:
@@ -528,9 +607,42 @@ class D2IWriter:
                 new_item_data.extend(clear_d2s_only_flags(child.source_data))
         new_item_data.extend(original_tail)
 
-        # JM count = number of root items (children are not counted).
-        jm_delta = len(new_items) - len(orig_items)
-        new_jm_count = section.item_count + jm_delta
+        # JM count = number of root items the writer is putting into the
+        # JM-counted region of the section. Socket children are inline
+        # children of their parent and are NOT counted separately.
+        #
+        # Why `len(new_items)` rather than `section.item_count + delta`:
+        #   The on-disk JM count (`section.item_count`) sometimes UNDER-
+        #   counts what the parser captured. The parser is permissive and
+        #   keeps decoding past the JM boundary as long as the bit-stream
+        #   is well-formed - those "parser-captured extras" land in
+        #   `orig_items` even though the on-disk JM header doesn't include
+        #   them.
+        #
+        #   The old delta-style formula (`section.item_count + (len(new) -
+        #   len(orig))`) underflowed in that case: emptying a tab with
+        #   parser-captured extras computed a NEGATIVE JM count, which
+        #   then raised `struct.error` from `pack_into("<H", ...)` when
+        #   the user tried to archive every item in such a tab.
+        #
+        # Promoting parser-captured extras to JM-counted on splice is
+        # semantically safe: those items ARE present in the new file and
+        # the game reads them as JM-counted on next load. No item data
+        # is lost, and the file ends up in canonical (extras-free) shape.
+        # Bytes the parser could NOT decode at all stay in `original_tail`
+        # and remain uncounted (true tail extras).
+        new_jm_count = len(new_items)
+
+        # The JM count is a uint16 in the section header. Refuse to emit
+        # rather than silently truncate via `pack_into("<H", ...)`.
+        if not 0 <= new_jm_count <= 0xFFFF:
+            raise D2IWriterIntegrityError(
+                f"Tab {tab_idx}: computed new JM count {new_jm_count} "
+                f"is out of uint16 range [0, 65535]. "
+                f"(orig items={len(orig_items)}, new items={len(new_items)}, "
+                f"section.item_count={section.item_count}). "
+                f"Refusing to emit a malformed section."
+            )
 
         # Build new section
         new_section_size = D2I_HEADER_SIZE + 4 + len(new_item_data)
@@ -548,18 +660,21 @@ class D2IWriter:
         # Item data
         result[D2I_HEADER_SIZE + 4 :] = new_item_data
 
+        parser_extras = max(0, len(orig_items) - section.item_count)
         logger.info(
             "Spliced tab %d: JM count %d -> %d (%+d), "
-            "items %d -> %d, section %d -> %d bytes (%+d), tail=%d bytes",
+            "items %d -> %d, section %d -> %d bytes (%+d), "
+            "parser-extras=%d, tail=%d bytes",
             tab_idx,
             section.item_count,
             new_jm_count,
-            jm_delta,
+            new_jm_count - section.item_count,
             len(orig_items),
             len(new_items),
             section.section_size,
             new_section_size,
             new_section_size - section.section_size,
+            parser_extras,
             len(original_tail),
         )
 
@@ -626,4 +741,3 @@ class D2IWriter:
         tabs = [list(tab.items) for tab in stash.tabs]
         original = [list(tab.items) for tab in stash.tabs]
         return cls(source_data, tabs, _original_items=original)
-

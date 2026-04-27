@@ -219,6 +219,7 @@ def test_B4_stack_cap_raises():
     tab5.items[idx] = r01_clone
     # Inject an r02 synth stack with 95 count (using operation's internal synthesizer)
     from d2rr_toolkit.operations.rune_cube_up import _synthesize_rune_parsed_item
+
     tab5.items.append(_synthesize_rune_parsed_item("r02", display_quantity=95))
     # Now cubing 10 pairs of r01 -> 10 r02 would push r02 from 95 to 105, over cap.
     with pytest.raises(StackCapExceededError):
@@ -321,7 +322,7 @@ def test_D1_file_single_produces_valid_d2i(tmp_stash: Path):
     assert post.get("r02", 0) == 2
     # Signature check on the written file
     buf = tmp_stash.read_bytes()
-    assert buf[:4] == b"\x55\xAA\x55\xAA", "D2I magic header missing after write"
+    assert buf[:4] == b"\x55\xaa\x55\xaa", "D2I magic header missing after write"
 
 
 def test_D2_file_single_creates_backup(tmp_stash: Path):
@@ -379,10 +380,13 @@ def test_D4_cli_rune_subcommand(tmp_stash: Path):
     result = runner.invoke(
         app,
         [
-            "cube-up", "rune",
+            "cube-up",
+            "rune",
             str(tmp_stash),
-            "--rune", "r01",
-            "--pairs", "2",
+            "--rune",
+            "r01",
+            "--pairs",
+            "2",
             "--no-backup",
         ],
     )
@@ -401,9 +405,11 @@ def test_D5_cli_bulk_subcommand(tmp_stash: Path):
     result = runner.invoke(
         app,
         [
-            "cube-up", "bulk",
+            "cube-up",
+            "bulk",
             str(tmp_stash),
-            "--keep", "r09:3",
+            "--keep",
+            "r09:3",
             "--no-backup",
         ],
     )

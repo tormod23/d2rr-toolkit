@@ -40,8 +40,7 @@ def _parse_min_keep(specs: list[str]) -> dict[str, int]:
         m = _MIN_KEEP_RE.match(spec.strip().lower())
         if not m:
             raise typer.BadParameter(
-                f"--keep value {spec!r} must look like rNN:COUNT (e.g. r15:50). "
-                f"NN is 01..33."
+                f"--keep value {spec!r} must look like rNN:COUNT (e.g. r15:50). " f"NN is 01..33."
             )
         out[m.group(1)] = int(m.group(2))
     return out
@@ -55,9 +54,7 @@ def _print_result_table(result, title: str) -> None:
     tbl.add_column("added", justify="right")
     tbl.add_column("remaining", justify="right")
     # Union of all rune codes that moved, plus any non-zero remaining counts.
-    codes = sorted(
-        set(result.removed) | set(result.added) | set(result.remaining)
-    )
+    codes = sorted(set(result.removed) | set(result.added) | set(result.remaining))
     for code in codes:
         rem = result.removed.get(code, 0)
         add = result.added.get(code, 0)
@@ -113,9 +110,7 @@ def cmd_rune(
 
     backup = not (no_backup or out is not None)
     try:
-        res = cube_up_file_single(
-            save_file, rune, pairs, dest_path=out, backup=backup
-        )
+        res = cube_up_file_single(save_file, rune, pairs, dest_path=out, backup=backup)
     except (
         CannotUpgradeMaxRuneError,
         InvalidRuneCodeError,
@@ -129,7 +124,9 @@ def cmd_rune(
         err_console.print(f"[bold red]File not found:[/] {e}")
         raise typer.Exit(1)
 
-    _print_result_table(res.result, f"Cube-up {rune} -> next tier ({pairs} pair{'s' if pairs != 1 else ''})")
+    _print_result_table(
+        res.result, f"Cube-up {rune} -> next tier ({pairs} pair{'s' if pairs != 1 else ''})"
+    )
     console.print(f"[green]Wrote:[/] {res.output_path}")
     if res.backup_path:
         console.print(f"[dim]Backup:[/] {res.backup_path}")
@@ -177,9 +174,7 @@ def cmd_bulk(
     min_keep = _parse_min_keep(keep) if keep else None
     backup = not (no_backup or out is not None)
     try:
-        res = cube_up_file_bulk(
-            save_file, min_keep=min_keep, dest_path=out, backup=backup
-        )
+        res = cube_up_file_bulk(save_file, min_keep=min_keep, dest_path=out, backup=backup)
     except Section5MissingError as e:
         err_console.print(f"[bold red]Cube-up failed:[/] {e}")
         raise typer.Exit(1)
@@ -191,9 +186,7 @@ def cmd_bulk(
     if res.result.capped_by_output_limit:
         console.print(
             "[yellow]Some upgrades hit the 99-stack cap:[/] "
-            + ", ".join(
-                f"{c}+{n}" for c, n in sorted(res.result.capped_by_output_limit.items())
-            )
+            + ", ".join(f"{c}+{n}" for c, n in sorted(res.result.capped_by_output_limit.items()))
         )
     console.print(f"[green]Wrote:[/] {res.output_path}")
     if res.backup_path:

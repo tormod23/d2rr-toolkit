@@ -207,9 +207,7 @@ class MercenaryParserMixin:
 
         for i in range(merc_count):
             if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(
-                    "Parsing merc item %d/%d at bit %d", i + 1, merc_count, reader.bit_pos
-                )
+                logger.debug("Parsing merc item %d/%d at bit %d", i + 1, merc_count, reader.bit_pos)
             try:
                 item = self._parse_single_item()  # type: ignore[attr-defined]
                 if item.flags.location_id == 6 and self._merc_items:
@@ -286,4 +284,3 @@ class MercenaryParserMixin:
                 len(self._merc_items) - merc_count,
                 len(self._merc_items),
             )
-

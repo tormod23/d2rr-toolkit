@@ -333,5 +333,3 @@ Star on fixed / at-max rolls, `[min-max]` on every rollable line,
 two ranges per damage pair.  See `affix_rolls.py` for the resolver
 internals and `tests/test_stat_roll_ranges.py` (45 checks) for the
 full regression matrix.
-
-

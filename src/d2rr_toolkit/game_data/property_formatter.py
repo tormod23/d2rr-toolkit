@@ -2272,5 +2272,3 @@ def _build_property_formatter_from_source() -> None:
         )
         return
     get_property_formatter().load_from_bytes(raw, source=casc_path)
-
-

@@ -237,7 +237,19 @@ ITEM_BIT_SOCKETED: int = 11
 """Bit 11: Item has sockets. [BV]."""
 
 ITEM_BIT_PICKED_UP: int = 13
-"""Bit 13: Picked up since last save. [UNKNOWN]."""
+"""Bit 13: 'picked up since last save' transient flag. [BV] across reference
+implementations as the IS_NEW marker.
+
+The game sets this bit when an item enters the inventory and clears it on
+the next save. It is observed set in d2s (character) saves but NEVER set in
+d2i (shared stash) saves. The :func:`writers.item_utils.clear_d2s_only_flags`
+helper strips this bit from every item written to a d2i to maintain that
+invariant.
+
+Secondary use: on simple (compact) items, the bit doubles as a 'this is a
+gem-class item' discriminator under the v105 simple-item encoder. On
+extended items it remains the transient pickup flag only.
+"""
 
 ITEM_BIT_IS_EAR: int = 16
 """Bit 16: Item is a player ear (PvP trophy). [BV]."""
@@ -255,8 +267,21 @@ Potions, gold, and some misc items are simple.
 ITEM_BIT_ETHEREAL: int = 22
 """Bit 22: Item is ethereal. [BV] (all tested = 0, flag confirmed)."""
 
-ITEM_BIT_UNKNOWN_23: int = 23
-"""Bit 23: Unknown, always 1 in all tested items. [UNKNOWN]."""
+ITEM_BIT_FORMAT_SENTINEL: int = 23
+"""Bit 23: always-1 format sentinel for v87+ items. [BV].
+
+Set to 1 on every observed v87+ (LoD Expansion + D2R + v105 Reimagined) item.
+Earlier item formats (v86 and below) wrote 0 here. Format-version sentinel,
+not informational - the game uses it to detect the item-record schema.
+
+Any encode path that synthesizes an item from scratch MUST hard-set this to
+1. Round-trip parsers preserve the original value.
+"""
+
+# Backwards-compat alias - older code referenced this constant by its
+# pre-decode name. New call sites should use ITEM_BIT_FORMAT_SENTINEL.
+ITEM_BIT_UNKNOWN_23: int = ITEM_BIT_FORMAT_SENTINEL
+"""Deprecated alias for :data:`ITEM_BIT_FORMAT_SENTINEL`."""
 
 ITEM_BIT_PERSONALIZED: int = 24
 """Bit 24: Item is personalized (has player name). [BV]."""
@@ -412,9 +437,23 @@ Note: if has_custom_graphics=1, this shifts by 3 bits.
 """
 
 EXT_OFFSET_TIMESTAMP: int = 48
-"""timestamp_unknown_bit offset from ext_start. [BV].
-Note: shifts if has_gfx or has_class are set.
-Purpose of this bit is [UNKNOWN].
+"""Online-server-data flag offset from ext_start. [BV].
+
+This is a 1-bit ``has_online_payload`` flag (historically called
+``timestamp_unknown_bit`` in the toolkit; the new name is more accurate per
+external format documentation). When set, an additional payload follows:
+
+  - Misc / gem / ring / amulet / charm / rune items: 128 bits of
+    server-side metadata (96 bits in pre-D2R formats v87..v96).
+  - All other item categories: 3 bits.
+
+The payload encodes server-side state for online characters (UTC timestamp,
+account / server-instance hash). For local single-player saves the flag is
+observed 0 across every fixture in the test corpus, so the follow-on
+payload is not currently parsed - we treat the bit as an unconditional
+1-bit consume and assume the payload is absent.
+
+Note: position shifts if has_gfx or has_class are set earlier in the header.
 """
 
 EXT_OFFSET_TYPE_SPECIFIC: int = 49
@@ -490,29 +529,32 @@ should name the field it reads explicitly.
 WEAPON_WIDTH_MAX_DUR: int = 8
 """max_durability field width on weapons. [BV TC09/TC33]."""
 
-WEAPON_WIDTH_CUR_DUR: int = 8
-"""cur_durability field width on weapons. [BV TC09/TC33].
+WEAPON_WIDTH_CUR_DUR: int = 10
+"""cur_durability field width on weapons. [BV].
 
-Weapons use 8 bits for cur_dur - NOT 10 like armor does. The weapon
-branch has 2 trailing bits after cur_dur (``WEAPON_WIDTH_POST_DUR``)
-that can be non-zero, so they cannot be absorbed into a 10-bit
-cur_dur without producing impossible cur > max values. 38 of 429
-weapon items across the fixtures show non-zero trailing bits.
-"""
-
-WEAPON_WIDTH_POST_DUR: int = 2
-"""2 bits immediately after weapon cur_dur. [BV TC33] width.
-
-[PARTIAL] Semantic meaning not fully established: observed values
-are 0b00 (91.1%), 0b01 (2.3%), and 0b10 (6.5%) across 429 weapon
-items, with 0b11 never observed. The distribution is correlated
-with throwing vs melee status in ways the current analysis has not
-fully decoded. Writers preserve these bits verbatim.
+V105 uses a 10-bit cur_dur for BOTH weapons AND armor; this matches
+``ARMOR_WIDTH_CUR_DUR``. The 10-bit single-field interpretation
+replaces an earlier ``8 + 8 + 2 = 18 bits`` model where the trailing
+2 bits were treated as an unknown post-dur field. The two encodings
+are bit-equivalent on the wire (same total 18 bits) but the 10-bit
+form is the canonical layout: it accounts for ``+max_durability``
+affixes that can push effective cur_dur past 255 while keeping the
+base max in 8 bits.
 
 When ``max_dur == 0`` (Phase Blade / ``7cr``), cur_dur is omitted
-and this field SHRINKS to 1 bit. See the weapon-path parse code
-for the ``max_dur > 0`` gating.
+and the parser falls back to a 1-bit padding read - see the
+weapon-path parse code for the ``max_dur > 0`` gating.
 """
+
+# Back-compat alias - older code referenced WEAPON_WIDTH_POST_DUR as
+# a separate 2-bit field. With the unified 10-bit cur_dur model that
+# field no longer exists; the constant resolves to 0 so any leftover
+# ``reader.read(WEAPON_WIDTH_POST_DUR)`` is a no-op rather than
+# silently consuming bits.
+WEAPON_WIDTH_POST_DUR: int = 0
+"""Deprecated. Set to 0 (no separate field) under the 10-bit cur_dur
+model. The bits formerly read here are now the high 2 bits of
+``WEAPON_WIDTH_CUR_DUR``."""
 
 
 # ============================================================
@@ -583,6 +625,144 @@ HUFFMAN_TABLE: dict[str, str] = {
     "x": "00111",
     "y": "0001010",
     "z": "11011000",
-    # "_": [UNKNOWN] - underscore mapping not documented in d07riv table
+    # The Huffman alphabet covers exactly 36 glyphs: a-z (lowercase),
+    # 0-9, and space. There is NO encoding for underscore "_" or any
+    # uppercase / punctuation character. Item codes containing such
+    # characters cannot be Huffman-encoded; the encoder asserts on
+    # encounter to fail loud rather than emitting wrong bits.
 }
 
+
+# ============================================================
+# D2I (SHARED STASH) FILE-FORMAT CONSTANTS
+# ============================================================
+#
+# A .d2i file is a sequence of "pages" (called "tabs" or "sections" in
+# this codebase). Each page is a self-contained block:
+#
+#   bytes 0x00..0x03   magic 0x55AA55AA  (same as .d2s)
+#   bytes 0x04..0x07   header_format_flag  (u32 LE)
+#   bytes 0x08..0x0B   version             (u32 LE = 105 for Reimagined)
+#   bytes 0x0C..0x0F   gold                (u32 LE, capped per-page)
+#   bytes 0x10..0x13   page_length         (u32 LE, full size of THIS page)
+#   bytes 0x14..0x3F   padding (mostly zero)
+#   bytes 0x40..0x41   "JM" marker (0x4A 0x4D)
+#   bytes 0x42..0x43   item_count          (u16 LE)
+#   bytes 0x44..0x44+N item blobs          (variable, bit-packed)
+#
+# After ``page_length`` bytes the next page starts (also at a 0x55AA55AA
+# magic). The Reimagined SharedStash always ends with a 7th page whose
+# +0x40 marker is ``0xC0EDEAC0`` instead of ``"JM"`` - this is a v105
+# audit/log block that the game validates against the actual stash items
+# on load. Removing items without updating the audit block causes the
+# game to reject the file with "Failed to join Game".
+# ============================================================
+
+D2I_PAGE_HEADER_SIZE: int = 0x44
+"""Size of the per-page header in bytes (64-byte fixed header + 4-byte
+JM-marker-and-count). [BV] across all reference implementations - empty
+pages have ``page_length == 68`` exactly."""
+
+# ── Page-header field offsets ──
+
+D2I_PAGE_OFFSET_MAGIC: int = 0x00
+"""Magic 0x55AA55AA (4 bytes)."""
+
+D2I_PAGE_OFFSET_HEADER_FLAG: int = 0x04
+"""Reimagined-vs-vanilla discriminator (u32 LE)."""
+
+D2I_PAGE_OFFSET_VERSION: int = 0x08
+"""File-format version (u32 LE = 105 for Reimagined v105)."""
+
+D2I_PAGE_OFFSET_GOLD: int = 0x0C
+"""Per-page gold (u32 LE). Capped at ``D2I_TAB_GOLD_MAX`` for shared tabs.
+
+Was historically misidentified in the toolkit as an "always-static
+non-checksum field". The static-looking value 0x002625A0 = 2,500,000
+that we observed in two unrelated fixtures was the per-tab gold cap
+written by the game when a tab held the maximum amount."""
+
+D2I_PAGE_OFFSET_PAGE_LENGTH: int = 0x10
+"""Total page length in bytes (u32 LE) - the next page starts at
+``page_offset + page_length``."""
+
+D2I_PAGE_OFFSET_JM_MARKER: int = 0x40
+"""Position of the ``JM`` marker (or the audit-block discriminator
+``0xC0EDEAC0`` for the trailing v105 page)."""
+
+# ── Reimagined header-flag values ──
+
+D2I_HEADER_FLAG_VANILLA: int = 0x00
+"""``header_format_flag`` value on vanilla D2R (pre-v105) shared stash
+files. The C++ general-purpose D2 editor's reference fixtures all show
+this value."""
+
+D2I_HEADER_FLAG_REIMAGINED: int = 0x02
+"""``header_format_flag`` value on Reimagined (v105) shared stash files.
+
+Combined with ``version == 105`` this is the cleanest single-test
+discriminator for "is this file a Reimagined SharedStash". Every
+Reimagined .d2i in the test corpus carries this value at offset 0x04
+of EVERY page header (not just the first)."""
+
+# ── Gold caps (Reimagined v105) ──
+
+D2I_TAB_GOLD_MAX: int = 2_500_000
+"""Maximum gold the game allows in a single shared-stash tab. Encoded
+in the per-page ``gold`` field at offset 0x0C of each page header.
+
+Confirmed by reference editor source code that hard-clamps gold writes
+to this value; we add a parser warning if a parsed value exceeds it.
+"""
+
+D2I_REIMAGINED_TAB_COUNT: int = 5
+"""Number of regular (gold-bearing) shared-stash tabs in Reimagined v105.
+
+Reimagined increased the count from 3 to 5 with Reign of the Warlock.
+Earlier Reimagined versions had 3 tabs of 2.5M each (= 7.5M total);
+v105 has 5 tabs of 2.5M each (= 12.5M total). The 6th regular tab
+(index 5, "Gems / Materials / Runes") has no gold field, and the 7th
+page is the audit-block (also no gold)."""
+
+D2I_REIMAGINED_TOTAL_GOLD_MAX: int = D2I_TAB_GOLD_MAX * D2I_REIMAGINED_TAB_COUNT
+"""Total gold that fits across all 5 shared tabs combined (12,500,000)."""
+
+# ── Audit-block / trailing v105 page ──
+
+D2I_AUDIT_BLOCK_MARKER: bytes = b"\xc0\xed\xea\xc0"
+"""4-byte marker that appears at offset 0x40 of the trailing page,
+where the ``JM`` marker would normally be. Identifies the page as the
+v105 audit/log block (Reimagined-only, absent from vanilla D2R files)."""
+
+D2I_AUDIT_RECORD_SIZE: int = 10
+"""Size of a single record in the audit block.
+
+Empirically derived layout:
+  bytes 0..3  field_a   (u32 LE; appears to be a 32-bit hash/ID)
+  bytes 4..5  marker    (u16 LE = 0x01C3 - constant per-record discriminator)
+  bytes 6..9  field_b   (u32 LE; small integers, mutmasslich counters)
+
+Records sit after a 20-byte sub-header that follows the 4-byte marker.
+"""
+
+D2I_AUDIT_RECORD_MARKER: int = 0x01C3
+"""Constant u16 LE value found at bytes 4..5 of every audit-block record.
+Used as a stride-validation marker when scanning the audit block."""
+
+
+# ============================================================
+# D2S (CHARACTER) GOLD CAPS
+# ============================================================
+
+D2S_PERSONAL_STASH_GOLD_MAX: int = 2_500_000
+"""Maximum gold storable in the character's personal stash. [BV] from
+the Reimagined gameplay rules - same cap as a single shared-stash tab.
+"""
+
+D2S_CHARACTER_GOLD_PER_LEVEL: int = 10_000
+"""Gold a character can carry equals ``character_level * 10_000``.
+
+The cap scales linearly with character level: a level-1 char carries
+10k, a level-99 char carries 990k. This is a soft display cap; the
+field width itself supports much larger values, but the game refuses
+to deposit gold above ``level * 10_000`` from drops or trades."""

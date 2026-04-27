@@ -274,5 +274,3 @@ def load_merc_names(json_blob: bytes) -> None:
     to handle BOM and encoding fallbacks consistently.
     """
     get_hireling_db().load_merc_names(json_blob)
-
-

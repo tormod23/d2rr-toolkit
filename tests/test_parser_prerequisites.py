@@ -212,9 +212,9 @@ def test_zero_completeness_gaps_on_initial_6303(caplog):
     stash = D2IParser(fixture).parse()
 
     gap_warnings = [r for r in caplog.records if "completeness gap" in r.getMessage()]
-    assert not gap_warnings, (
-        f"Completeness gaps regressed: {[r.getMessage() for r in gap_warnings]}"
-    )
+    assert (
+        not gap_warnings
+    ), f"Completeness gaps regressed: {[r.getMessage() for r in gap_warnings]}"
 
     tab1 = stash.tabs[1]
     assert len(tab1.items) == 43, f"Tab 1 root-item regression: expected 43, got {len(tab1.items)}"
@@ -241,4 +241,3 @@ if __name__ == "__main__":
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     pytest.main([__file__, "-v"])
-

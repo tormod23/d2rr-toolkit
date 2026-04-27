@@ -241,5 +241,3 @@ def get_source_versions(
         mod_version=mod_version,
         mod_name=mod_name,
     )
-
-

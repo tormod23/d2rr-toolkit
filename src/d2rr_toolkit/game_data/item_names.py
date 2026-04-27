@@ -1041,5 +1041,3 @@ def load_item_names(
         source_versions=source_versions,
         cache_dir=cache_dir,
     )
-
-

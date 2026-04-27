@@ -37,9 +37,7 @@ def test_item_db_closes_on_happy_path(tmp_path: Path) -> None:
 
 def test_section5_db_closes_on_exception(tmp_path: Path) -> None:
     with pytest.raises(RuntimeError):
-        with Section5Database(
-            tmp_path / "s5.db", mode=section5_db_module.SOFTCORE
-        ) as db:
+        with Section5Database(tmp_path / "s5.db", mode=section5_db_module.SOFTCORE) as db:
             raise RuntimeError("boom")
     with pytest.raises(sqlite3.ProgrammingError):
         db._conn.execute("SELECT 1")  # noqa: SLF001

@@ -163,5 +163,3 @@ This project uses [Semantic Versioning](https://semver.org/).
 
 First pre-release. Parsing and archiving of D2R Reimagined save
 files; no public version has been cut yet.
-
-

@@ -369,5 +369,3 @@ Watch the `parser_warning` field for exact per-stat gap descriptions
 Regression in breakdown surfaces in §11 (VikingBarbie single-save
 sweep) and §12 (cross-TC sweep) of
 `tests/test_stat_breakdown_resolver.py`.
-
-

@@ -248,5 +248,3 @@ Key assertions pinned against the live Reimagined 3.0.7 data:
 * `load_unique_sprite_map_with_aliases` populates exactly the four
   expected aliases (`life_death`, `hellwardens_will`,
   `ars_aldiabolos`, `eldruin`) against the live `uniques.json`.
-
-

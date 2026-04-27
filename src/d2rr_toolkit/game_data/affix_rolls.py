@@ -1038,5 +1038,3 @@ def load_affix_rolls(
         source_versions=source_versions,
         cache_dir=cache_dir,
     )
-
-

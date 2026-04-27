@@ -64,7 +64,9 @@ logger = logging.getLogger(__name__)
 # on POSIX.
 
 _WINDOWS_D2R_INSTALL = Path(r"C:\Program Files (x86)\Diablo II Resurrected")
-_WINDOWS_SAVE_DIR_SUFFIX = Path("Saved Games") / "Diablo II Resurrected" / "mods" / "ReimaginedThree"
+_WINDOWS_SAVE_DIR_SUFFIX = (
+    Path("Saved Games") / "Diablo II Resurrected" / "mods" / "ReimaginedThree"
+)
 
 
 def _default_d2r_install() -> Path | None:
@@ -155,12 +157,8 @@ class GamePaths:
     # ── User-provided base paths ──────────────────────────────────────────
     # Defaults resolve via _default_* helpers so env vars take effect
     # on every construction, not just at module import time.
-    d2r_install: Path = field(
-        default_factory=lambda: _default_d2r_install() or Path()
-    )
-    mod_dir: Path = field(
-        default_factory=lambda: _default_mod_dir() or Path()
-    )
+    d2r_install: Path = field(default_factory=lambda: _default_d2r_install() or Path())
+    mod_dir: Path = field(default_factory=lambda: _default_mod_dir() or Path())
 
     # ── Derived paths (set by resolve()) ──────────────────────────────────
 
@@ -279,4 +277,3 @@ def get_game_paths() -> GamePaths:
     if _game_paths is None:
         return init_game_paths()
     return _game_paths
-

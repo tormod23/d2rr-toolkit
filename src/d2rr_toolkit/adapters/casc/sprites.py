@@ -273,5 +273,3 @@ def _save_image(
         img.save(buf, format="PNG", **{"opt" + "imize": True})
 
     return buf.getvalue()
-
-

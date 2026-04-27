@@ -54,8 +54,27 @@ def encode_huffman_code(code: str) -> list[int]:
     for ch in code + " ":
         enc = _HUFFMAN_ENCODE.get(ch)
         if enc is None:
+            # The Huffman alphabet covers exactly 36 glyphs: a-z, 0-9, space.
+            # Common bugs: callers passing uppercase codes (e.g. "R01" instead
+            # of "r01"), codes with underscore separators ("class_skill"),
+            # or stale codes from non-Reimagined excel data. Fail loud rather
+            # than emit silently-wrong bits.
+            extra = ""
+            if ch == "_":
+                extra = (
+                    " - underscore is NOT in the Huffman alphabet across "
+                    "all known reference implementations; the input code "
+                    "is likely from a non-binary table or has been "
+                    "transformed before reaching the encoder."
+                )
+            elif ch.isupper():
+                extra = (
+                    " - the alphabet contains lowercase a-z only; the input "
+                    "code may have been case-mangled."
+                )
             raise ValueError(
-                f"Character {ch!r} has no Huffman encoding. Valid glyphs: "
+                f"Character {ch!r} (in code {code!r}) has no Huffman "
+                f"encoding.{extra} Valid glyphs: "
                 f"{sorted(_HUFFMAN_ENCODE.keys())}"
             )
         bits.extend(enc)
@@ -195,6 +214,7 @@ def synthesize_simple_item_blob(
     # as byte-alignment padding. No further work needed.
 
     return bytes(buf)
+
 
 # Item flag bit positions within the item binary blob (LSB-first).
 # These encode WHERE the item is stored (location, grid position, panel).
@@ -574,4 +594,3 @@ def clone_with_quantity(item: "ParsedItem", new_display_quantity: int) -> "Parse
             "quantity": raw_value,
         }
     )
-

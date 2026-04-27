@@ -548,5 +548,3 @@ def reset_default_versions_cache() -> None:
     global _default_versions_cache
     with _default_versions_lock:
         _default_versions_cache = None
-
-

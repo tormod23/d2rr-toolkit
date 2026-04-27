@@ -193,9 +193,7 @@ class ItemsParserMixin:
         items: list[ParsedItem] = []
         for i in range(item_count):
             if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(
-                    "Parsing item %d/%d at bit %d", i + 1, item_count, reader.bit_pos
-                )
+                logger.debug("Parsing item %d/%d at bit %d", i + 1, item_count, reader.bit_pos)
             try:
                 item = self._parse_single_item()
                 # Assign socket children to their parent: items with
@@ -253,9 +251,7 @@ class ItemsParserMixin:
         total_sockets: int = sum(
             (it.total_nr_of_sockets or 0)
             for it in parents
-            if it.flags is not None
-            and it.flags.socketed
-            and it.location_name != "Socketed"
+            if it.flags is not None and it.flags.socketed and it.location_name != "Socketed"
         )
         already_in_jm: int = sum(
             1
@@ -670,7 +666,10 @@ class ItemsParserMixin:
         unique_id, ilvl, quality = self._read_extended_header()
         has_gfx, gfx_index, has_class = self._read_gfx_and_class()
         automod_id, prefix_carry_from_automod = self._read_automod_dispatch(
-            code=code, has_gfx=has_gfx, has_class=has_class, quality=quality,
+            code=code,
+            has_gfx=has_gfx,
+            has_class=has_class,
+            quality=quality,
         )
         extended = ItemExtendedHeader(
             unique_item_id=unique_id,
@@ -693,8 +692,13 @@ class ItemsParserMixin:
 
         # ── Type-specific data + magical properties (with rare-MISC 7-slot retry)
         armor_data, magical_properties, qsd = self._parse_type_specific_with_retry(
-            flags=flags, code=code, quality=quality, has_gfx=has_gfx,
-            pre_qsd_pos=pre_qsd_pos, qsd=qsd, item_start_bit=item_start_bit,
+            flags=flags,
+            code=code,
+            quality=quality,
+            has_gfx=has_gfx,
+            pre_qsd_pos=pre_qsd_pos,
+            qsd=qsd,
+            item_start_bit=item_start_bit,
         )
 
         # ── Byte-align after base property list [BV TC08 / BV TC24 uhn] ─
@@ -704,17 +708,28 @@ class ItemsParserMixin:
             reader.skip_to_byte_boundary()
 
         runeword_properties, magical_properties = self._read_runeword_property_list(
-            flags=flags, code=code, magical_properties=magical_properties,
+            flags=flags,
+            code=code,
+            magical_properties=magical_properties,
         )
 
         # [BV TC16/TC19] Non-bf1 misc inter-item padding handled in _parse_item_list().
         item_end_bit = self._clamp_to_section_end(reader.bit_pos, code)
         return self._assemble_parsed_item(
-            code=code, flags=flags, item_start_bit=item_start_bit,
-            item_end_bit=item_end_bit, extended=extended, armor_data=armor_data,
-            magical_properties=magical_properties, qsd=qsd, automod_id=automod_id,
-            prefix_carry_from_automod=prefix_carry_from_automod, has_gfx=has_gfx,
-            has_class=has_class, quality=quality, runeword_id=runeword_id,
+            code=code,
+            flags=flags,
+            item_start_bit=item_start_bit,
+            item_end_bit=item_end_bit,
+            extended=extended,
+            armor_data=armor_data,
+            magical_properties=magical_properties,
+            qsd=qsd,
+            automod_id=automod_id,
+            prefix_carry_from_automod=prefix_carry_from_automod,
+            has_gfx=has_gfx,
+            has_class=has_class,
+            quality=quality,
+            runeword_id=runeword_id,
             runeword_properties=runeword_properties,
         )
 
@@ -758,8 +773,7 @@ class ItemsParserMixin:
                     expected=f"item ending within section (<= bit {section_end_bit})",
                     found=f"overshoot by {item_end_bit - section_end_bit} bits",
                     context=(
-                        f"item_code={code!r} quality={quality} "
-                        f"item_start_bit={item_start_bit}"
+                        f"item_code={code!r} quality={quality} " f"item_start_bit={item_start_bit}"
                     ),
                 )
         # Invariant 3: reader position is inside the data buffer.
@@ -772,8 +786,7 @@ class ItemsParserMixin:
                 expected=f"item ending within buffer (<= byte {reader_bytes})",
                 found=f"bit offset {item_end_bit} past end-of-data",
                 context=(
-                    f"item_code={code!r} quality={quality} "
-                    f"item_start_bit={item_start_bit}"
+                    f"item_code={code!r} quality={quality} " f"item_start_bit={item_start_bit}"
                 ),
             )
         # Invariant 2 is enforced inside _read_property_list_with_isc
@@ -807,7 +820,13 @@ class ItemsParserMixin:
         runeword_id: int | None = None
         if flags.runeword:
             runeword_id = reader.read(12)  # row index into runes.txt [SPEC_ONLY]
-            _rw_unknownnown_padding = reader.read(4)  # purpose unknown [BV] (always 5?)
+            # 4-bit runeword padding constant. The reference C++ general-
+            # purpose D2 editor hard-codes the value 5 on encode, naming
+            # the slot ``RUNEWORD_PADDING_NUM_BITS``. Likely a runeword-
+            # format-version sentinel. We observe 5 in every fixture and
+            # preserve the parsed value verbatim on round-trip; any future
+            # synthesizer for runeword items MUST emit value=5 here.
+            _rw_padding_sentinel = reader.read(4)
         if flags.personalized:
             self._read_null_terminated_string()  # [SPEC_ONLY]
         # ── Timestamp bit [BINARY_VERIFIED TC40/UniqueJewel/OnlyCharm/Spirit.d2s]
@@ -1661,7 +1680,7 @@ class ItemsParserMixin:
         ``_parse_type_specific_data`` via the MISC branch:
 
           - non-stackable runes (r##): the 1-bit
-            ``_unknown_misc_normal_prefix`` [BINARY_VERIFIED TC16/TC19]
+            ``_normal_misc_extra_bit`` [BINARY_VERIFIED TC16/TC19]
           - stackable runes (s##, Reimagined Rune Stack): the scan-forward
             ``_read_quantity_before_terminator`` is self-aligning and
             absorbs the bit implicitly [BINARY_VERIFIED TC67/TC69,
@@ -1875,13 +1894,7 @@ class ItemsParserMixin:
                 # applied to the melee-weapon path.  The ``[BV TC33]``
                 # marker remains accurate for the current data.
                 throw_max_dur = reader.read(WEAPON_WIDTH_MAX_DUR)  # 8 bits [BV TC33]
-                throw_cur_dur = reader.read(WEAPON_WIDTH_CUR_DUR)  # 8 bits [BV TC33]
-                # Weapon-specific 2-bit tail after cur_dur. [BV TC33 width]; the
-                # VALUE can be 0b00/0b01/0b10 across the fixture corpus, with
-                # 0b10 ("always=2") being the common case for throwing weapons
-                # specifically - see constants.WEAPON_WIDTH_POST_DUR for the
-                # distribution across all 429 weapon fixtures.
-                _throw_weapon_post_dur = reader.read(WEAPON_WIDTH_POST_DUR)
+                throw_cur_dur = reader.read(WEAPON_WIDTH_CUR_DUR)  # 10 bits [BV] V105 unified
                 _throw_qty = reader.read(9)  # [BINARY_VERIFIED TC33] quantity
                 if socketed:
                     self._total_nr_of_sockets = reader.read(
@@ -1905,34 +1918,32 @@ class ItemsParserMixin:
                     ),
                 )
             # [BINARY_VERIFIED Lightsabre/FrozenOrbHydra + TC33 bows]
-            # Weapon durability block layout, correctly depends on whether
-            # max_dur is the D2R "no durability at all" sentinel:
+            # Weapon durability block layout depends on whether max_dur
+            # is the D2R "no durability at all" sentinel:
             #
             #   max_dur > 0   (normal weapons, bows, etc.):
-            #       max_dur(8) + cur_dur(8) + unk_post_dur(2)     = 18 bits
+            #       max_dur(8) + cur_dur(10)                       = 18 bits
             #   max_dur == 0  (Phase Blade - the only weapon with
             #       ``durability=0`` in weapons.txt):
-            #       max_dur(8)               + unk_post_dur(1)    =  9 bits
+            #       max_dur(8)               + post_dur(1)         =  9 bits
             #
-            # The ``unk_post_dur`` width itself shifts with the
-            # presence/absence of ``cur_dur``: 2 bits when cur_dur is
-            # present, 1 bit when omitted.  The root cause of the
-            # Lightsabre parse regression was reading the weapon path
-            # as if max_dur > 0 always held - Phase Blade's 0-max_dur
-            # then drifted every downstream stat by 10 bits and
-            # surfaced as absurd values (fire_dam=2.9M, cold_dam=3.9M,
-            # +3686540% Enhanced Defense, ...).  The 9-bit vs 18-bit
-            # contrast was derived from a bit-sweep of Lightsabre's
-            # 46-byte source_data; see the regression test in
-            # ``tests/test_phase_blade_durability.py`` for the
-            # full derivation and the expected-vs-actual walkthrough.
+            # V105 unifies armor and weapon durability layout - both use
+            # an 8-bit max_dur followed by a 10-bit cur_dur. The 10-bit
+            # width covers durability values past 255 that arise when
+            # ``+max_durability`` affixes inflate the effective max.
+            #
+            # An older model interpreted the same 18 bits as
+            # ``max(8) + cur(8) + unk(2)``; the two are bit-equivalent
+            # on the wire. The unified 10-bit-cur form was adopted to
+            # avoid an "unknown 2-bit field" in an otherwise densely
+            # packed format and to keep weapon and armor parsing
+            # symmetric. See the regression test in
+            # ``tests/test_phase_blade_durability.py`` for the full
+            # derivation of the variable-width sentinel handling for
+            # the Phase Blade case (max_dur==0).
             max_dur = reader.read(WEAPON_WIDTH_MAX_DUR)  # 8 bits [BV TC09/TC33]
             if max_dur > 0:
-                cur_dur = reader.read(WEAPON_WIDTH_CUR_DUR)  # 8 bits [BV TC09/TC33]
-                # [BV TC33 width]; see constants.WEAPON_WIDTH_POST_DUR for the
-                # observed value distribution - non-zero in 38 / 429 items, so
-                # these bits are NOT padding and cannot be folded into cur_dur.
-                _weapon_post_dur = reader.read(WEAPON_WIDTH_POST_DUR)
+                cur_dur = reader.read(WEAPON_WIDTH_CUR_DUR)  # 10 bits [BV] V105 unified
             else:
                 cur_dur = 0
                 _weapon_post_dur = reader.read(1)  # 1 bit [BV Lightsabre]
@@ -2017,7 +2028,12 @@ class ItemsParserMixin:
                     return None
                 elif quality == 7:
                     # [BINARY_VERIFIED TC29] Unique stackable: unknown(1) + qty(9) + properties
-                    _unknown_unique_stack_prefix = reader.read(1)  # purpose unknown [BV]
+                    # 1-bit prefix before the quantity field for stackable
+                    # Unique items. No external reference implementation
+                    # decodes this bit; semantics remain undocumented.
+                    # [BINARY_VERIFIED TC29] - the read is required for
+                    # correct alignment regardless of meaning.
+                    _unique_stack_extra_bit = reader.read(1)
                     self._misc_qty = reader.read(9)
                     if logger.isEnabledFor(logging.DEBUG):
                         logger.debug(
@@ -2036,7 +2052,16 @@ class ItemsParserMixin:
                     return None
             elif quality == 2:
                 # [BINARY_VERIFIED TC16/TC19] Non-stackable Normal quality misc
-                _unknown_misc_normal_prefix = reader.read(1)  # purpose unknown [BV] [BV]
+                # items consume a 1-bit prefix here. External references
+                # confirm this bit specifically for rune codes (``r##`` /
+                # ``s##``) on V105 - the comment "verified against real
+                # game Cham encoding" appears in another v105-aware
+                # implementation. Our broader gating (any non-stackable
+                # normal misc) covers a superset that has been
+                # binary-verified locally on TC16/TC19; retaining the
+                # broader scope avoids regressions on non-rune items
+                # like charms/jewels.
+                _normal_misc_extra_bit = reader.read(1)
 
             # [BINARY_VERIFIED Baals_Amu] Set quality misc items (amulets, rings)
             # have a 5-bit set_bonus_mask before properties, same as armor/weapon.
@@ -2579,9 +2604,7 @@ class ItemsParserMixin:
                 bit_pos = start_pos + offset + i
                 byte_idx = bit_pos // 8
                 bit_idx = bit_pos % 8
-                if byte_idx < len(reader._data) and reader._data[byte_idx] & (
-                    1 << bit_idx
-                ):
+                if byte_idx < len(reader._data) and reader._data[byte_idx] & (1 << bit_idx):
                     val |= 1 << i
             if val == ITEM_STATS_TERMINATOR:
                 # Found! Read 9-bit quantity right before it
@@ -2600,7 +2623,9 @@ class ItemsParserMixin:
         logger.warning("0x1FF terminator not found within 50 bits for stackable quantity")
         return 0
 
-    def _read_magical_properties(self, socketed: bool = False, is_set: bool = False) -> list[dict[str, Any]]:
+    def _read_magical_properties(
+        self, socketed: bool = False, is_set: bool = False
+    ) -> list[dict[str, Any]]:
         """Read the magical property list using ItemStatCost.txt.
 
         Reads 9-bit stat IDs until 0x1FF terminator. For each stat,
@@ -2738,11 +2763,7 @@ class ItemsParserMixin:
                 val2 = 0
                 if stat_def.save_param_bits == 0:
                     paired = isc.get(stat_id + 1)
-                    val2 = (
-                        reader.read(paired.save_bits)
-                        if paired and paired.save_bits > 0
-                        else 0
-                    )
+                    val2 = reader.read(paired.save_bits) if paired and paired.save_bits > 0 else 0
                 properties.append(
                     {
                         "stat_id": stat_id,
@@ -2780,9 +2801,7 @@ class ItemsParserMixin:
                 else:
                     level = reader.read(6)
                     skill_id = reader.read(10)
-                    chance = (
-                        reader.read(stat_def.save_bits - 16) if stat_def.save_bits > 16 else 0
-                    )
+                    chance = reader.read(stat_def.save_bits - 16) if stat_def.save_bits > 16 else 0
                 properties.append(
                     {
                         "stat_id": stat_id,
@@ -3078,5 +3097,3 @@ _QUALITY_READERS.update(
         8: ItemsParserMixin._read_qsd_rare_or_crafted,  # Crafted (same layout as Rare)
     }
 )
-
-

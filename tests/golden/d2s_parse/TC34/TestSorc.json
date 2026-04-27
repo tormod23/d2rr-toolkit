@@ -586,7 +586,7 @@
         "defense_display": 0,
         "durability": {
           "max_durability": 250,
-          "current_durability": 181
+          "current_durability": 693
         }
       },
       "quantity": 0,
@@ -652,7 +652,7 @@
         "defense_display": 0,
         "durability": {
           "max_durability": 82,
-          "current_durability": 57
+          "current_durability": 569
         }
       },
       "quantity": 0,
@@ -718,7 +718,7 @@
         "defense_display": 0,
         "durability": {
           "max_durability": 82,
-          "current_durability": 49
+          "current_durability": 561
         }
       },
       "quantity": 0,
@@ -916,7 +916,7 @@
         "defense_display": 0,
         "durability": {
           "max_durability": 250,
-          "current_durability": 24
+          "current_durability": 280
         }
       },
       "quantity": 0,

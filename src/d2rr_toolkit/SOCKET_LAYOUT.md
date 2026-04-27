@@ -154,5 +154,3 @@ correct layout + fill order without any local bookkeeping:
 shape `list[SocketPosition]` are the stable public contract - the
 internal tables can grow to cover new layout shapes without any
 call-site changes.
-
-

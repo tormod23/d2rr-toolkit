@@ -804,5 +804,3 @@ class ParsedCharacter(BaseModel):
             "merc_equipped": self.merc_equipped(),
             "merc_socketed": self.merc_socketed_children(),
         }
-
-

@@ -366,5 +366,3 @@ def load_enchantment_recipes(
         source_versions=source_versions,
         cache_dir=cache_dir,
     )
-
-

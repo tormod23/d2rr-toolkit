@@ -350,6 +350,3 @@ def archive_rollback(
 
     rollback(save_file, backup_path)
     console.print(f"[green]Rolled back {save_file.name} from {backup_name}[/]")
-
-
-

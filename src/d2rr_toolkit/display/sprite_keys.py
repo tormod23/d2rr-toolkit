@@ -82,5 +82,3 @@ def sprite_key_for_item(item: ParsedItem) -> str:
         return f"g-{item.item_code}-{gfx_idx}"
 
     return item.item_code
-
-

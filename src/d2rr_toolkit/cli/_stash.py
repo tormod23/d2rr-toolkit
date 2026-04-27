@@ -282,6 +282,3 @@ def stash_convert(
         raise typer.Exit(1)
     finally:
         db.close()
-
-
-

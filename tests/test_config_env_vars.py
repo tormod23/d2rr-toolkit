@@ -20,9 +20,7 @@ from d2rr_toolkit import config as config_module
 from d2rr_toolkit.exceptions import ConfigurationError
 
 
-def test_init_game_paths_uses_env_vars(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_init_game_paths_uses_env_vars(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv("D2RR_D2R_INSTALL", str(tmp_path / "game"))
     monkeypatch.setenv("D2RR_MOD_DIR", str(tmp_path / "mod"))
     (tmp_path / "game").mkdir()
@@ -34,9 +32,7 @@ def test_init_game_paths_uses_env_vars(
     assert gp.mod_dir == tmp_path / "mod"
 
 
-def test_explicit_arg_beats_env(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_explicit_arg_beats_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv("D2RR_D2R_INSTALL", str(tmp_path / "env_game"))
     monkeypatch.setattr(config_module, "_game_paths", None)
     gp = config_module.init_game_paths(

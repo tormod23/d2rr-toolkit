@@ -173,13 +173,13 @@ def test_all_collapse_types_share_the_helper(dbs):
     import inspect
 
     fmt = dbs["fmt"]
-    assert hasattr(fmt, "_attach_collapse_roll_range"), (
-        "helper method removed - collapse lines will regress"
-    )
+    assert hasattr(
+        fmt, "_attach_collapse_roll_range"
+    ), "helper method removed - collapse lines will regress"
     src = inspect.getsource(fmt._format_properties_grouped_raw)
-    assert "_attach_collapse_roll_range" in src, (
-        "_register_collapse no longer calls the attach helper"
-    )
+    assert (
+        "_attach_collapse_roll_range" in src
+    ), "_register_collapse no longer calls the attach helper"
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -208,4 +208,3 @@ if __name__ == "__main__":
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     pytest.main([__file__, "-v"])
-

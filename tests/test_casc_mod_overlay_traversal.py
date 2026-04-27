@@ -110,14 +110,12 @@ def test_resolve_mod_path_preserves_path_segments(tmp_path: Path) -> None:
     resolved = reader._resolve_mod_path("data:data/global/excel/weapons.txt")
     assert resolved is not None
     expected_suffix = Path("data") / "global" / "excel" / "weapons.txt"
-    assert resolved.parts[-len(expected_suffix.parts):] == expected_suffix.parts
+    assert resolved.parts[-len(expected_suffix.parts) :] == expected_suffix.parts
 
 
 def test_legit_dotdot_stays_inside(mod_dir: Path) -> None:
     """``foo/../weapons.txt`` normalises inside mod_dir -- must succeed."""
     reader = _make_reader(mod_dir)
-    result = reader._resolve_mod_path(
-        "data:data/global/excel/../excel/weapons.txt"
-    )
+    result = reader._resolve_mod_path("data:data/global/excel/../excel/weapons.txt")
     assert result is not None
     assert result.name == "weapons.txt"

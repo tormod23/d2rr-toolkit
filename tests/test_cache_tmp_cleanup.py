@@ -61,9 +61,7 @@ def test_unlink_failure_logs_debug(
 
     with patch.object(Path, "unlink", flaky_unlink):
         with caplog.at_level(logging.DEBUG, logger="d2rr_toolkit.meta.cache"):
-            cache_module._try_write_cache(
-                cache_path, 1, _versions(), _Dummy()
-            )
+            cache_module._try_write_cache(cache_path, 1, _versions(), _Dummy())
 
     # The write itself succeeds; the debug log just records the
     # cleanup-failure diagnostic.

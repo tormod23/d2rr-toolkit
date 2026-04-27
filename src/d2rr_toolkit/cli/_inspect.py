@@ -1088,5 +1088,3 @@ def _render_item_panel(
         )
     )
     console.print()
-
-

@@ -466,7 +466,9 @@ def test_7_damage_pair() -> None:
     check(len(out) == 1, "collapsed to a single FormattedProperty")
     fp = out[0]
     check(
-        fp.roll_ranges == (), "dual-stat dmg-norm slot -> empty roll_ranges", f"got {fp.roll_ranges}"
+        fp.roll_ranges == (),
+        "dual-stat dmg-norm slot -> empty roll_ranges",
+        f"got {fp.roll_ranges}",
     )
     check(fp.is_perfect is False, "is_perfect False when there's no real rolling range")
 
@@ -725,7 +727,9 @@ def test_13_element_proc_damage_no_range() -> None:
         return
     fp = out[0]
     check(
-        fp.roll_ranges == (), "dmg-fire dual-stat slot -> empty roll_ranges", f"got {fp.roll_ranges}"
+        fp.roll_ranges == (),
+        "dmg-fire dual-stat slot -> empty roll_ranges",
+        f"got {fp.roll_ranges}",
     )
     check(fp.is_perfect is False, "no range -> is_perfect False")
 
@@ -818,7 +822,9 @@ def test_15_poison_dual_stat_no_range() -> None:
     if not poison_lines:
         return
     fp = poison_lines[0]
-    check(fp.roll_ranges == (), "dmg-pois 3-stat slot -> empty roll_ranges", f"got {fp.roll_ranges}")
+    check(
+        fp.roll_ranges == (), "dmg-pois 3-stat slot -> empty roll_ranges", f"got {fp.roll_ranges}"
+    )
     check(fp.is_perfect is False, "no range -> is_perfect False")
 
 
@@ -1009,5 +1015,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-
-
