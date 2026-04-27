@@ -20,7 +20,7 @@ repos:
       - id: trailing-whitespace
         exclude: '\.(d2s|d2i)(\..+)?$'
       - id: end-of-file-fixer
-        exclude: '\.(d2s|d2i)(\..+)?$'
+        exclude: '\.(d2s|d2i)(\..+)?$|^tests/golden/.*\.json$'
       - id: check-yaml
       - id: check-toml
       - id: check-added-large-files
