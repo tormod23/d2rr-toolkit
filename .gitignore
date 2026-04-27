@@ -5,8 +5,9 @@
 # --- General ---
 # ignore ALL "trailing ." hidden files and directories
 .*
-# Two exceptions from ths rule, files we need to be checked in
+# Three exceptions from this rule, files we need to be checked in
 !.gitignore
+!.gitattributes
 !.pre-commit-config.yaml
 
 # --- Python ---
