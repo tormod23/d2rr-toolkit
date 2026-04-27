@@ -56,4 +56,3 @@ expected_values:
 
   gold: 0
 ```
-

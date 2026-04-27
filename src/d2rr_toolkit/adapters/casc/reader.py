@@ -284,4 +284,3 @@ class CASCReader:
             raw = f.read(encoded_size + 0x1E)
 
         return decode_blte(raw)
-

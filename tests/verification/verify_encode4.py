@@ -386,4 +386,3 @@ print("  Bedeutung unklar - könnte Timer-Wert sein")
 print()
 print("Nach encode=4 (9+5=14 bits): 0x1FF bei Bit 7882 [OK]")
 print(f"Nächstes Item bei Bit {7882+9}")
-

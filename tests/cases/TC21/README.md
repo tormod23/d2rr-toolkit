@@ -169,4 +169,3 @@ expected_values:
       properties:
         - "Adds 1-11 Weapon Fire Damage"
 ```
-

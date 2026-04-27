@@ -135,4 +135,3 @@ expected_values:
     - name: "Runes"
       item_count: 0
 ```
-

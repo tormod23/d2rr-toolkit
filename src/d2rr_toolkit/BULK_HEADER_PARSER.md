@@ -255,4 +255,3 @@ All 122 test checks in `tests/test_bulk_header_parser.py` pass, covering:
 6. Performance - <100 ms for 50 files, >20* faster than full parse
 7. No bit-reader traces in INFO log
 8. Works with only `charstats.txt` loaded (no item DBs needed)
-

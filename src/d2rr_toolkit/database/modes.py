@@ -279,4 +279,3 @@ def bind_database_mode(
             "share a database."
         )
     return stored  # type: ignore[return-value]
-

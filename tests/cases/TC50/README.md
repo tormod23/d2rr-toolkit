@@ -38,4 +38,3 @@ carry-chain for unique_type_id resolution.
 parse:   python -m d2rr_toolkit.cli parse tests/cases/TC50/DiamondFacet.d2s
 inspect: python -m d2rr_toolkit.cli inspect tests/cases/TC50/DiamondFacet.d2s
 ```
-

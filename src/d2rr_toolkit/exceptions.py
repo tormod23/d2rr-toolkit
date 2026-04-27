@@ -130,4 +130,3 @@ class HuffmanDecodeError(ToolkitError):
             f"after consuming {bits_consumed} bits. "
             f"Item code table may be incomplete or data is corrupted."
         )
-

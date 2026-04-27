@@ -346,4 +346,3 @@ simp6 = read_bits(data, pos + 21, 1)
 qual_raw6 = read_bits(data, pos + 53 + hbits6 + 42, 4) if code6 else 0
 print(f"Code: '{code6}' loc={loc6} panel={panel6} pos=({px6},{py6}) simple={simp6}")
 print("  Erwartet: spear (Magic, loc=0 panel=1 pos=(1,0))")
-

@@ -137,4 +137,3 @@ expected_values:
     - index: 7
       name: "Runes"
       is_empty: true
-

@@ -39,4 +39,3 @@ save directory while such a file is present.
    to the pre-write backup.
 4. Full round-trip of the pre_empty_tab4 -> empty-tab-4 operation parses
    back to the expected item layout.
-

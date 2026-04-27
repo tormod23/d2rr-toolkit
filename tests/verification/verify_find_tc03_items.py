@@ -236,4 +236,3 @@ for bit, code, desc in found_bits:
     else:
         print(f"  bit {bit:6d}  '{code}'  {desc:<25}  (first)")
     prev_bit = bit
-

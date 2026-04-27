@@ -27,4 +27,3 @@ consumer.
     in-game verification).
   * **TC69** - successor snapshot with a `.GUI2` variant for the
     multi-write regression on grid-tab splice.
-

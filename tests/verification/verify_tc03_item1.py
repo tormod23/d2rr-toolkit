@@ -383,4 +383,3 @@ print(f"  type_start offset from ext_start: {type_start - ext_start} bits (parse
 print(
     f"  defense_raw={defense_raw-10+10} (display={defense_raw-10}) max_dur={max_dur} cur_dur={cur_dur}"
 )
-

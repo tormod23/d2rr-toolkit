@@ -36,4 +36,3 @@ Tests parsing of a Magic Small Charm with both has_gfx=1 and has_class=1 set. Va
 parse:   python -m d2rr_toolkit.cli parse tests/cases/TC43/OnlyCharm.d2s
 inspect: python -m d2rr_toolkit.cli inspect tests/cases/TC43/OnlyCharm.d2s
 ```
-

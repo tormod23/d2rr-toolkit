@@ -377,4 +377,3 @@ def open_item_db(
     if db_path is None:
         db_path = default_archive_db_path(mode, base_dir=base_dir)
     return ItemDatabase(db_path, mode=mode)
-

@@ -44,4 +44,3 @@ Tests parsing of a Set quality ethereal socketed armor (Darkmage's Falling Star)
 parse:   python -m d2rr_toolkit.cli parse tests/cases/TC47/SetSocket.d2s
 inspect: python -m d2rr_toolkit.cli inspect tests/cases/TC47/SetSocket.d2s
 ```
-

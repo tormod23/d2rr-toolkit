@@ -56,4 +56,3 @@ Standard ammunition with varying quantities (max 500).
   - Adds 5-20 Weapon Damage
   - +20% Increased Attack Speed
   - +1 to Bow and Crossbow Skills
-

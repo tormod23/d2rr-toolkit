@@ -55,4 +55,3 @@ Out of scope:
 - **CWE-390 (Stripped preconditions):** writer invariants are
   expressed as explicit `raise D2SWriteError(...)` statements so
   they survive `python -O`.
-

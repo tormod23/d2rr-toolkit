@@ -27,4 +27,3 @@ Main loaders:
 
 See ``docs/ARCHITECTURE.md`` §"Package responsibilities" -> game_data.
 """
-

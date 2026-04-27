@@ -344,4 +344,3 @@ class BitReader:
             f"byte_pos=0x{self.byte_pos:04X}, "
             f"bits_remaining={self.bits_remaining})"
         )
-

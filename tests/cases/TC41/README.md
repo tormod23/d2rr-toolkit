@@ -33,4 +33,3 @@ Tests parsing of a Magic quality Jewel that has custom graphics (has_gfx=1). Val
 parse:   python -m d2rr_toolkit.cli parse tests/cases/TC41/EasyJewel.d2s
 inspect: python -m d2rr_toolkit.cli inspect tests/cases/TC41/EasyJewel.d2s
 ```
-

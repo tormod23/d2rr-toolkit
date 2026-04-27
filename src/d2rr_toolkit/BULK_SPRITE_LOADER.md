@@ -332,4 +332,3 @@ Original sections in `test_bulk_sprite_loader.py`:
 8. Progress callback: correct signature, final call has `cur == tot`, all phases emitted
 9. Error handling: `ValueError` on missing args, empty `items_json` returns empty dict
 10. Log sanity: < 20 INFO lines total, no bit-reader traces
-

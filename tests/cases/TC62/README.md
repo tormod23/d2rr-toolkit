@@ -38,4 +38,3 @@ is the specific regression trigger that previously caused the parser to drop
 the trailing padding byte and drift into the next item. The fixture sits
 ahead of every other test because a cascade failure here corrupts anything
 that follows it in a normal character save.
-

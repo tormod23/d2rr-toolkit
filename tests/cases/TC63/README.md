@@ -57,4 +57,3 @@ count drops from six to one, and every trailing magical property is dropped
 - which in turn cascades into garbage when the parser tries to continue to
 the next item. Keeping this item stable guards the entire extended-header
 code path against a whole class of silent drift bugs.
-

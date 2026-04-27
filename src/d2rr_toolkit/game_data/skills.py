@@ -285,4 +285,3 @@ def load_skills(
         source_versions=source_versions,
         cache_dir=cache_dir,
     )
-

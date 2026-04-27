@@ -166,4 +166,3 @@ expected_values:
       item_level: 84
       visual_variant: "Custom"
 ```
-

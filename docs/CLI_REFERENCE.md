@@ -290,4 +290,3 @@ involvement).
   raw tail holds unparsed item blobs.
 - `GameDataNotLoadedError` - parser prerequisites missing; the
   CLI auto-loads so this should only fire in library use.
-

@@ -380,4 +380,3 @@ expected_values:
         - "+20% Deadly Strike"
         - "Replenishes Quantity"
 ```
-

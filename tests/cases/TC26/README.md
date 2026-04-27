@@ -287,4 +287,3 @@ expected_values:
         - "+218% Enhanced Defense"
         - "+11 to Strength"
 ```
-

@@ -39,4 +39,3 @@ is documented in `VERIFICATION_LOG.md`.
 parse:   python -m d2rr_toolkit.cli parse tests/cases/TC40/TestSorc.d2s
 inspect: python -m d2rr_toolkit.cli inspect tests/cases/TC40/TestSorc.d2s
 ```
-

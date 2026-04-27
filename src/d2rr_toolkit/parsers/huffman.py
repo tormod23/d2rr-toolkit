@@ -158,4 +158,3 @@ def is_valid_item_code(code: str) -> bool:
         True if the string matches the expected pattern.
     """
     return 2 <= len(code) <= 4 and all(c.isalnum() or c == "_" for c in code)
-

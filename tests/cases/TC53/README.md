@@ -29,4 +29,3 @@ in a single character file.
 parse:   python -m d2rr_toolkit.cli parse tests/cases/TC53/SchreibTest.d2s
 inspect: python -m d2rr_toolkit.cli inspect tests/cases/TC53/SchreibTest.d2s
 ```
-

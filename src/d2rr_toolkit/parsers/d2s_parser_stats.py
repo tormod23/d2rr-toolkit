@@ -189,4 +189,3 @@ class StatsSkillsParserMixin:
         reader.read_bytes_raw(2 + SKILLS_DATA_SIZE)
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("Skills section skipped (%d bytes)", 2 + SKILLS_DATA_SIZE)
-

@@ -13,4 +13,3 @@ Top-level classes:
 
 See ``docs/ARCHITECTURE.md`` §"Package responsibilities" -> models.
 """
-

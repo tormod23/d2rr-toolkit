@@ -383,4 +383,3 @@ def restore_to_d2i(
         d2i_path.name,
         tab_index,
     )
-

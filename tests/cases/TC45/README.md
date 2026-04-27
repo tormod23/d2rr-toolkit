@@ -51,4 +51,3 @@ Tests parsing of a Spirit Monarch runeword shield with 28-bit sock_unk (4 bits s
 parse:   python -m d2rr_toolkit.cli parse tests/cases/TC45/Spirit.d2s
 inspect: python -m d2rr_toolkit.cli inspect tests/cases/TC45/Spirit.d2s
 ```
-

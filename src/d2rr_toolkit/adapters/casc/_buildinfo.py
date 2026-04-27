@@ -89,4 +89,3 @@ def load_build_config(
                 vfs_entries.append((bytes.fromhex(parts[0]), bytes.fromhex(parts[1])))
 
     return enc_ckey, enc_ekey, vfs_entries
-

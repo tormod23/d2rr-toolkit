@@ -220,4 +220,3 @@ expected_values:
         - {stat_id: 19,  value: 20, name: "tohit"}              # +20 AR (base)
         - {stat_id: 93,  value: 30, name: "item_fasterattackrate"} # +30% IAS (2-item bonus)
 ```
-

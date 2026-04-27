@@ -412,4 +412,3 @@ for item_num in range(1, ITEM_COUNT + 1):
 
 print(f"\nFinal position: bit {pos} (byte {pos//8})")
 print(f"File size: {len(data)*8} bits ({len(data)} bytes)")
-

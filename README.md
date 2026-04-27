@@ -163,4 +163,3 @@ MIT - see `LICENSE`.
 
 PRs welcome; all code, comments and commits must be in English. See
 `CONTRIBUTING.md`.
-

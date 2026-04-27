@@ -84,4 +84,3 @@ def disable_logging() -> None:
     log = _logging.getLogger(_TOOLKIT_LOGGER_NAME)
     log.setLevel(_logging.NOTSET)
     log.propagate = False
-

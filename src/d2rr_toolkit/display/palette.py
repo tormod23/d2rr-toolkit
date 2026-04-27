@@ -287,4 +287,3 @@ def load_colors_txt(casc: "CASCReader") -> dict[str, int]:
     _colors_txt_cache = result
     logger.debug("Loaded colors.txt: %d entries", len(result))
     return result
-

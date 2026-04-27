@@ -192,4 +192,3 @@ def dump_header(
     )
 
     console.print(table)
-

@@ -473,4 +473,3 @@ def test_8_cache_enabled_skill_display_name() -> None:
 
 if __name__ == "__main__":
     sys.exit(main())
-

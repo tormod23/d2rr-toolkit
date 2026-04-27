@@ -142,4 +142,3 @@ expected_values:
       properties:
         - "Slows Target by 21%"
 ```
-

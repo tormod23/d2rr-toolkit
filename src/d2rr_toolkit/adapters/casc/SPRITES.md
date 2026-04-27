@@ -277,4 +277,3 @@ WebP lossless output is typically **25-35% smaller** than PNG for the same
 sprite, with identical visual quality. WebP lossy at quality 85-90 produces
 files **70-80% smaller** than PNG with minimal visible difference at
 inventory-sprite sizes (29x29 to 58x116 pixels).
-

@@ -74,4 +74,3 @@ expected_values:
   stash_empty: true
   equipped_empty: true
 ```
-

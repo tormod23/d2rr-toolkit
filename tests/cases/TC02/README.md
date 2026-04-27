@@ -163,4 +163,3 @@ expected_values:
       count: 4
       slots: [0, 1, 2, 3]
       is_starter: false
-

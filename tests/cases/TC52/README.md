@@ -40,4 +40,3 @@ unique misc item.
 parse:   python -m d2rr_toolkit.cli parse tests/cases/TC52/EyeOfKahn.d2s
 inspect: python -m d2rr_toolkit.cli inspect tests/cases/TC52/EyeOfKahn.d2s
 ```
-

@@ -214,4 +214,3 @@ source_versions)` triple in its `meta` table.
   cached file is read through `CASCReader.read_file`, which is
   where the Iron Rule (Reimagined mod first, CASC fallback)
   enforces the mod-overrides-base-game layering.
-

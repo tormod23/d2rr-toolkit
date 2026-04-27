@@ -150,4 +150,3 @@ def item_fits(
             if row[x + dx]:
                 return False
     return True
-

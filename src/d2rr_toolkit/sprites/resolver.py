@@ -496,4 +496,3 @@ class SpriteResolver:
         except Exception as e:
             logger.debug("DC6 error for %s: %s", invfile, e)
             return None
-

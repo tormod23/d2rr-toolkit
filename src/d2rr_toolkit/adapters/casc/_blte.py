@@ -113,4 +113,3 @@ def _decode_frame(frame_data: bytes) -> bytes | None:
         return None
     else:
         return frame_data
-

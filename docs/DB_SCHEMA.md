@@ -195,4 +195,3 @@ is v1).
 - The archive-layer verify step (`_verify_d2i_on_disk`) is
   independent of SQLite - it operates on the post-write D2I bytes
   and rolls BOTH the file AND the DB insert back on any anomaly.
-

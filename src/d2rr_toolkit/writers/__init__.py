@@ -23,4 +23,3 @@ survive ``python -O`` (unlike ``assert``).
 
 See ``docs/ARCHITECTURE.md`` §"Package responsibilities" -> writers.
 """
-

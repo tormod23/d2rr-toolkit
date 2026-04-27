@@ -194,4 +194,3 @@ def load_properties(
         source_versions=source_versions,
         cache_dir=cache_dir,
     )
-

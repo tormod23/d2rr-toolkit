@@ -714,4 +714,3 @@ def _decode_header_from_bytes(
 # class-definition time would require forward references. Dict values are
 # unbound methods - the caller invokes them as reader_fn(self).
 # _QUALITY_READERS populate block moved to d2s_parser_items.py.
-

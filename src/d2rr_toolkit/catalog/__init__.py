@@ -24,4 +24,3 @@ __all__ = [
     "get_item_catalog",
     "load_item_catalog",
 ]
-

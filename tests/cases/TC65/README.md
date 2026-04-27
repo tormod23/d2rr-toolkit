@@ -65,4 +65,3 @@ is in the character's inventory, stash, belt, or equipment.
 - The mixed item variety (normal, simple, rare, set, unique, runeword,
   quest, potions, scrolls) covers nearly every item kind the parser
   has to handle in a single fixture.
-

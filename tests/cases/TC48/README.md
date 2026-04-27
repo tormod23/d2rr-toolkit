@@ -71,4 +71,3 @@ Tests parsing of a complex inventory with multiple item types: runeword, unique,
 parse:   python -m d2rr_toolkit.cli parse tests/cases/TC48/BigStats.d2s
 inspect: python -m d2rr_toolkit.cli inspect tests/cases/TC48/BigStats.d2s
 ```
-

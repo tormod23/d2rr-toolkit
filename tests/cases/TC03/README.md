@@ -134,4 +134,3 @@ expected_values:
   stash_items_count: 10
   stash_grid_size: [16, 13]
   belt_items: []
-

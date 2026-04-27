@@ -19,4 +19,3 @@ and `writers/checksum.py`).
   for the timestamp-touch requirement.
 - `src/d2rr_toolkit/writers/d2i_writer.py` - `[FIX TC66 v2]` note in
   `_splice_section`.
-

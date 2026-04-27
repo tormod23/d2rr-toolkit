@@ -334,4 +334,3 @@ All 1213 checks PASS.
 - `invgrey*.dat` / `invgreybrown.dat` - inventory colormap files,
   5376 bytes each.
 - D2 Mods KB Article #57 - "Colormaps and the color of items".
-

@@ -157,4 +157,3 @@ def cleanup_old_backups(save_path: Path, *, keep: int = 20) -> int:
         p.unlink()
         logger.info("Removed old backup: %s", p)
     return len(to_remove)
-

@@ -75,4 +75,3 @@ def build_ekey_to_ckey_map(
         Dict mapping 9-byte EKey prefix -> 16-byte CKey.
     """
     return {ekey[:9]: ckey for ckey, (ekey, _) in ckey_map.items()}
-

@@ -143,4 +143,3 @@ The equipped versions are the upgraded [E] tier with different item codes from t
 parse:   python -m d2rr_toolkit.cli parse tests/cases/TC55/FrozenOrbHydra.d2s
 inspect: python -m d2rr_toolkit.cli inspect tests/cases/TC55/FrozenOrbHydra.d2s
 ```
-

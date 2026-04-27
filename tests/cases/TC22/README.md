@@ -142,4 +142,3 @@ expected_values:
         - "+3% to Experience Gained"
         - "+3 to Required Level"
 ```
-

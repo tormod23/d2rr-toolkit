@@ -81,4 +81,3 @@ Sorceress with 6 items covering Enchanted Items, Set quality misc (ring), and Un
 - "You Feel Incorporeal..." makes the character semi-transparent in-game.
 - Enchantment counts are tracked per item slot category (same system as TC27).
 - Set quality misc items (rings, amulets) store per-item set bonus data.
-

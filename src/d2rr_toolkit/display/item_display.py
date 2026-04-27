@@ -717,4 +717,3 @@ def merge_all_properties(
                 all_props.append(p)
 
         return all_props
-

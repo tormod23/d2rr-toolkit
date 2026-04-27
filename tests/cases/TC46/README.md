@@ -48,4 +48,3 @@ Tests parsing of a Magic quality socketed Ornate Plate with sock_unk=4 bits (NOT
 parse:   python -m d2rr_toolkit.cli parse tests/cases/TC46/OrnatePlate.d2s
 inspect: python -m d2rr_toolkit.cli inspect tests/cases/TC46/OrnatePlate.d2s
 ```
-

@@ -79,4 +79,3 @@ expected_values:
         - "+17% Physical Damage Reduction"
         - "Attacker Takes Damage Of 3"
 ```
-

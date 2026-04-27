@@ -165,4 +165,3 @@ def get_invtransform(item: "ParsedItem") -> str | None:
                 invtransform = gem_to_invtransform(child_codes[0])
 
     return invtransform
-

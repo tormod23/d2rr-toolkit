@@ -494,4 +494,3 @@ expected_values:
         - "+10% Faster Cast Rate"
         - "Adds 35-70 Weapon Damage"
 ```
-

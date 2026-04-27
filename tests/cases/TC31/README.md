@@ -154,4 +154,3 @@ expected_values:
   gold: 0
   total_items: 3
 ```
-

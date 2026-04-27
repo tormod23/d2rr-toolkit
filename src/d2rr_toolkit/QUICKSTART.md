@@ -484,4 +484,3 @@ Topic-focused reference docs in this directory:
 
 Memory notes (`memory/`) persist the key findings for future
 sessions - search `MEMORY.md` for topic keywords.
-

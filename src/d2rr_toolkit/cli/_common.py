@@ -63,4 +63,3 @@ def _do_load_game_data() -> None:
     from d2rr_toolkit.catalog import load_item_catalog
 
     load_item_catalog()
-

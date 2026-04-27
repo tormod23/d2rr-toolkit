@@ -153,4 +153,3 @@ def _parse_index_file(
             pos += entry_size
 
     return file_offset_bits
-

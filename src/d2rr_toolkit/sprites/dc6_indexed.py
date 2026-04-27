@@ -193,4 +193,3 @@ def decode_dc6_indexed(data: bytes, frame: int = 0) -> IndexedDC6Frame:
         offset_y=oy,
         indices=bytes(indices),
     )
-

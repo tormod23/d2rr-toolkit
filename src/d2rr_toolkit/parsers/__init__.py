@@ -20,4 +20,3 @@ non-trivial binary claim carries a verification tag
 (``[BV]``, ``[BV TC##]``, ``[SPEC_ONLY]``, ``[UNKNOWN]``) as
 documented in ``CONTRIBUTING.md`` §"Verification tags".
 """
-

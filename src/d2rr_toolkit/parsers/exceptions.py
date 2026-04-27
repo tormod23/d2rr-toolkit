@@ -29,4 +29,3 @@ class GameDataNotLoadedError(RuntimeError):
     (which it now does; this error fires only when auto-load is disabled
     or itself fails).
     """
-

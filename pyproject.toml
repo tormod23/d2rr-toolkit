@@ -138,4 +138,3 @@ ignore-magic = true          # dunder methods
 ignore-property-decorators = false
 ignore-nested-functions = true
 verbose = 1
-

@@ -179,4 +179,3 @@ def list_game_data_files(pattern: str) -> list[str]:
                     paths.add(f"{prefix}{rel}")
 
     return sorted(paths)
-

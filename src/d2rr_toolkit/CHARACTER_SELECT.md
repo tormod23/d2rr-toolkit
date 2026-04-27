@@ -170,4 +170,3 @@ All fields are `[BINARY_VERIFIED]` against 7 real D2S files:
 - `AAAAA` (SC Warlock test copy)
 
 No manual verification needed - just import and use.
-

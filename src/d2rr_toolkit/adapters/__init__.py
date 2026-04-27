@@ -15,4 +15,3 @@ The rule of thumb: if a module imports ``PIL``, ``sqlite3``, a native
 binary, or touches the filesystem in a product-specific way, it belongs
 under adapters. The core domain modules must not.
 """
-

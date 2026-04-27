@@ -47,4 +47,3 @@ well past the 71-row table.
 ## Covered by
 
 `tests/test_charm_affix_decoding.py`
-

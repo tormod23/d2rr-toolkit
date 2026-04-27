@@ -63,4 +63,3 @@ Every bug fixed during the merc feature rollout hits this save:
 - Socket children correctly linked to their parent under `merc_items`.
 - Display-layer fixes (Berserk, Warp, Repair formula, Hidden Charm
   suppression).
-

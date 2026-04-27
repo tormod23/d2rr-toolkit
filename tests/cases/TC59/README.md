@@ -42,4 +42,3 @@ pinned by this fixture is documented in `VERIFICATION_LOG.md`.
 parse: python -m d2rr_toolkit.cli parse tests/cases/TC59/StressTest.d2i
 parse: python -m d2rr_toolkit.cli parse tests/cases/TC59/StressTestValidate2.d2i
 ```
-

@@ -388,4 +388,3 @@ print()
 print("Record in VERIFICATION_LOG.md:")
 print("  [BINARY_VERIFIED] socket_count field: 4 bits after 0x1FF for socketed items")
 print("  [BINARY_VERIFIED] socket_count position: immediately after 0x1FF, before byte-align")
-

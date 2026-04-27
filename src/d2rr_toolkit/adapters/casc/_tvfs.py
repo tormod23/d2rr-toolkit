@@ -248,4 +248,3 @@ def _min_bytes_for(size: int) -> int:
     if size <= 0xFFFFFF:
         return 3
     return 4
-

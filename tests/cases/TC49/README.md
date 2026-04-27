@@ -46,4 +46,3 @@ Stress test with a full endgame character containing 145 items total (125 JM ite
 parse:   python -m d2rr_toolkit.cli parse tests/cases/TC49/MrLockhart.d2s
 inspect: python -m d2rr_toolkit.cli inspect tests/cases/TC49/MrLockhart.d2s
 ```
-

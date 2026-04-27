@@ -467,4 +467,3 @@ print()
 print("  stu (extended armor, socketed):")
 print("    After 0x1FF terminator: 4-bit socket_count, then byte_align")
 print(f"    socket_count value: {sock_count} (stu1) and {sock3} (stu2)")
-

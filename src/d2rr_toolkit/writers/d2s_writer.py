@@ -465,4 +465,3 @@ class D2SWriter:
         except Exception:
             tmp_path.unlink(missing_ok=True)
             raise
-

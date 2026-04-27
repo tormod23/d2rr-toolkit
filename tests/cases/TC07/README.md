@@ -78,4 +78,3 @@ expected_values:
   equipped_empty: true
   quest_act1_q1: "started"
 ```
-

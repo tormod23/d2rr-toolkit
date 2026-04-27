@@ -259,4 +259,3 @@ expected_values:
         # 2-item set bonus:
         - {stat_id: 93,  value: 30,  name: "item_fasterattackrate"}
 ```
-

@@ -289,4 +289,3 @@ def load_isc_patch(patch_path: Path) -> None:
         patch_path: Path to the patch .txt file.
     """
     get_isc_db().load_patch(patch_path)
-

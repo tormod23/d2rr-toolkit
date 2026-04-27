@@ -115,4 +115,3 @@ expected_values:
     - "personal_stash"
     - "equipped_slots"
     - "mercenary"
-

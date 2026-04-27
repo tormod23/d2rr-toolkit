@@ -63,4 +63,3 @@ Enchantment counts are tracked per item slot category:
 
 Enchantment bonuses are stored as normal magical properties alongside any other
 item properties. There is no separate enchant data section.
-

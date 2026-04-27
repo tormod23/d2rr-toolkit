@@ -163,4 +163,3 @@ class HeaderParserMixin:
             progression=progression,
             source_path=self._path,
         )
-

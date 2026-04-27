@@ -144,4 +144,3 @@ def get_item_display_color(item_code: str, item_type: str, quality_id: int = 2) 
 
     # Fall back to quality-based color
     return QUALITY_COLORS.get(quality_id, "#FFFFFF")
-

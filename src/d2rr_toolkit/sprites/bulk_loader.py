@@ -1132,4 +1132,3 @@ def _read_set_sprite_entries(excel_dir: Path) -> list[dict[str, str]]:
         logger.warning("Could not read setitems.txt: %s", e)
 
     return entries
-

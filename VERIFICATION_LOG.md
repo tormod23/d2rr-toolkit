@@ -334,4 +334,3 @@ gem cluster):
 | Grid-tab items transferable cross-file (panel_id=5) | Existing `patch_item_position` helper is sufficient. |
 
 Coverage: [BV TC61].
-

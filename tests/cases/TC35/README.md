@@ -178,4 +178,3 @@ expected_values:
         - "+11% to All Resistances"
         - "+8 Life after each Kill"
 ```
-

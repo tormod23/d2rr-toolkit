@@ -357,4 +357,3 @@ def _apply_palette_transform(
         out[o + 3] = 0xFF
 
     return bytes(out)
-

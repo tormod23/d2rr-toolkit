@@ -22,4 +22,3 @@ The bulk header tests need a handful of distinct headers (mode/class/
 status combinations) that are not interesting enough to deserve their
 own dedicated TC. Pooling them here keeps the test fixtures discoverable
 and prevents loose `*.d2s` files from drifting around the repo root.
-

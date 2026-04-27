@@ -59,4 +59,3 @@ game's native save. The only structural differences are:
 parse: python -m d2rr_toolkit.cli parse tests/cases/TC57/StressTest.d2i
 parse: python -m d2rr_toolkit.cli parse tests/cases/TC57/StressTestValidate.d2i
 ```
-

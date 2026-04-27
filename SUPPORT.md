@@ -32,4 +32,3 @@ Do **not** file public issues for security problems. See
 
 This is a pre-1.0 project with one maintainer. Responses are best-effort;
 security issues follow the SLA in `SECURITY.md`.
-
