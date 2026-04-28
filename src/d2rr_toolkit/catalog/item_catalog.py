@@ -41,8 +41,6 @@ itemtypes.txt. This automatically excludes potions, gems, runes,
 quest items, gold, etc. without any explicit allow/deny list.
 """
 
-from __future__ import annotations
-
 import logging
 from dataclasses import dataclass
 from pathlib import Path
@@ -57,6 +55,10 @@ from d2rr_toolkit.adapters.casc import (
 )
 from d2rr_toolkit.game_data.item_names import get_item_names_db
 from d2rr_toolkit.game_data.item_types import get_item_type_db
+import csv
+import io
+from d2rr_toolkit.display.item_display import get_tier_suffix
+from d2rr_toolkit.meta import cached_load
 
 logger = logging.getLogger(__name__)
 
@@ -87,8 +89,6 @@ def _read_rows_or_raise(reader: CASCReader, casc_path: str) -> list[dict[str, st
         )
     # Reuse the shared parser by falling back on the bytes we just pulled
     # out of the reader - cheaper than a second lookup.
-    import csv
-    import io
 
     text = raw.decode("utf-8-sig", errors="replace")
     return list(csv.DictReader(io.StringIO(text), delimiter="\t"))
@@ -97,7 +97,7 @@ def _read_rows_or_raise(reader: CASCReader, casc_path: str) -> list[dict[str, st
 # ── Public data types ────────────────────────────────────────────────────────
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ItemTypeEntry:
     """One filterable item category.
 
@@ -137,7 +137,7 @@ class ItemTypeEntry:
     item_count: int
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ItemEntry:
     """One concrete base item available in the game.
 
@@ -317,7 +317,6 @@ class ItemCatalog:
           * tier suffix via :func:`get_tier_suffix` on the live
             :class:`ItemTypeDatabase` singleton.
         """
-        from d2rr_toolkit.display.item_display import get_tier_suffix
 
         type_db = get_item_type_db()
         names_db = get_item_names_db()
@@ -558,7 +557,6 @@ def load_item_catalog(
         cache_dir: Optional cache root override (tests route this
             into a ``tmp_path``).
     """
-    from d2rr_toolkit.meta import cached_load
 
     def _build() -> None:
         get_item_catalog().load(casc_reader)

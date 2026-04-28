@@ -5,6 +5,99 @@ This project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed (BREAKING)
+- **Minimum Python version raised to 3.14** (was 3.10).
+  3.10 reaches EOL in October 2026; 3.14 is the current stable line
+  with PEP 649 deferred annotations, PEP 695 type aliases, PEP 758
+  parenthesis-free `except`, native `StrEnum`, and `typing.Self` /
+  `typing.override` in stdlib.
+
+### Architecture
+- **No lazy imports anywhere in the codebase.** All 159
+  in-function imports promoted to module top-of-file. Two new
+  pytest checks in
+  [`tests/test_no_lazy_imports_or_cycles.py`](tests/test_no_lazy_imports_or_cycles.py)
+  enforce the rule on every run.
+- **Runtime import graph is now a DAG.** A previously-hidden
+  ``affix_rolls -> property_formatter -> stat_breakdown ->
+  affix_rolls`` cycle was broken in two steps:
+  - New leaf module `game_data/_roll_types.py` hosts the shared
+    `RollSource` / `StatRollRange` / `ItemRollContext` types so
+    `affix_rolls` no longer imports back into `property_formatter`.
+  - `PropertyFormatter.format_properties_grouped(breakdown=True)`
+    now goes through a hook installed on `property_formatter` by
+    `stat_breakdown` at its module-load time, so `property_formatter`
+    no longer imports `stat_breakdown` directly.
+  Public API (`format_properties_grouped(breakdown=True)`) is
+  unchanged - callers just need `import d2rr_toolkit.game_data.stat_breakdown`
+  somewhere in their entry path (the CLI does this transitively).
+- `docs/ARCHITECTURE.md` § "Dependency rules" updated with the new
+  invariants.
+
+### Modernised
+- `_CliMode` migrated from the `class X(str, Enum)` multi-inheritance
+  pattern to native `enum.StrEnum` (PEP 663, 3.11).
+- All 56 dataclasses now declare `slots=True` for ~30-50% smaller
+  memory footprint and stricter attribute discipline.
+- Manual `__slots__` classes (`D2ISectionInfo`, `_HuffmanNode`)
+  converted to `@dataclass(slots=True)`.
+- Context-manager `__enter__` methods in `ItemDatabase` /
+  `Section5Database` now annotated with `typing.Self` (PEP 673).
+- Custom `Exception` subclasses with overriding `__init__` decorated
+  with `@typing.override` (PEP 698).
+- Six existing `Literal[...]` aliases plus two newly-extracted
+  aliases (`Gender`, `Ambiguity`) converted to PEP 695
+  `type X = Y` syntax.
+- `shutil.copy2` calls in `backup.py` replaced with
+  `Path.copy(..., preserve_metadata=True)` (PEP 706, 3.14).
+- 69 `from __future__ import annotations` imports removed; PEP 649
+  deferred-evaluation handles forward references natively in 3.14.
+- `parsers.d2s_parser` now uses `Exception.add_note()` (PEP 678) to
+  attach the savefile path so the original exception type
+  (`InvalidSignatureError`, `UnsupportedVersionError`, ...) is
+  preserved instead of being wrapped in a generic `RuntimeError`.
+- 7 `except (A, B):` handlers without `as` clauses converted to
+  PEP 758 syntax (`except A, B:`).
+- 3 dispatch chains (BLTE encoding byte, gem-mod special func codes)
+  refactored to `match`/`case`.
+
+### Fixed
+- **mypy --strict on 83 source files now passes with 0 errors**
+  (down from 155). Surfaced and fixed real runtime bugs along the
+  way: `cli/_parse.py:dump_header` referenced an undefined `cs`
+  (CharStats DB now loaded inline); `cli/_archive.py:archive_list`
+  was missing `get_title_color` import; `cli/_archive.py:rollback`
+  used a non-existent `BACKUP_DIR_NAME` constant (corrected to use
+  `BACKUP_ROOT`); `cli/_stash.py` was missing its `logger`
+  declaration; `game_data/properties.py:load_properties` referenced
+  an unimported `SourceVersions` forward type;
+  `cli/_inspect.py:_render_materials_tab` was annotated `-> None`
+  but actually returned a list; the same file used a `tier`
+  variable name shadowed across scopes; the same file dereferenced
+  `item.extended` without a None-guard. mypy on the CI runner is
+  no longer informational and now blocks merges.
+- Removed 7 unused `# type: ignore` comments.
+- Tightened generic types throughout: 49 bare `dict` / `list` /
+  `tuple` / `re.Match` annotations now declare their inner types
+  (e.g. `dict[str, Any]`, `re.Match[str]`).
+- Added explicit annotations to 30 function signatures (database
+  parameters now properly typed against `ItemTypeDatabase`,
+  `ItemNamesDatabase`, `ItemStatCostDatabase`, etc.).
+
+### Tooling
+- `pyproject.toml`: `requires-python = ">=3.14"`,
+  `[tool.ruff] target-version = "py314"`,
+  `[tool.mypy] python_version = "3.14"`,
+  `pydantic >= 2.10` (was `>= 2.0`).
+- `.pre-commit-config.yaml`: ruff hook bumped from `v0.5.0`
+  to `v0.15.12`.
+- `uv.lock` regenerated; transitive `exceptiongroup` and `tomli`
+  dependencies dropped (both are stdlib in 3.11+ / 3.14).
+- New `.github/workflows/ci.yml` (was previously absent): pytest +
+  ruff + import-linter + interrogate matrix on
+  ubuntu-latest / windows-latest / Python 3.14, plus a strict mypy
+  job that blocks merges on type errors.
+
 ### Security
 - Harden `CASCReader._resolve_mod_path` against path-traversal
   (CWE-22). User-supplied CASC paths are now normalised and rejected

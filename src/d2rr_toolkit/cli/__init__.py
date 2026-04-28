@@ -27,15 +27,16 @@ This package assembles the Typer app from thematic sub-modules:
 See docs/CLI_REFERENCE.md for per-command arguments, examples, and exit codes.
 """
 
-from __future__ import annotations
-
 import sys
 
 # Force UTF-8 output on Windows terminals (box-drawing chars, em-dashes, etc.)
+# `reconfigure` is a TextIOWrapper-only method; sys.stdout is typed as TextIO
+# in the stubs, but on a real terminal it IS a TextIOWrapper. Wrapped in
+# AttributeError catch for the case it's not (pipe / redirection).
 if sys.platform == "win32":
     try:
-        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
     except AttributeError:
         pass
 

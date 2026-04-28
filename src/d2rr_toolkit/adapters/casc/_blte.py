@@ -7,8 +7,6 @@ not supported and return None.
 Reference: CascLib by Ladislav Zezula - CascDecompress.cpp
 """
 
-from __future__ import annotations
-
 import logging
 import zlib
 
@@ -100,16 +98,17 @@ def _decode_frame(frame_data: bytes) -> bytes | None:
     encoding_byte = frame_data[0:1]
     payload = frame_data[1:]
 
-    if encoding_byte == b"N":
-        return payload
-    elif encoding_byte == b"Z":
-        try:
-            return zlib.decompress(payload)
-        except zlib.error as e:
-            logger.debug("BLTE zlib error: %s", e)
+    match encoding_byte:
+        case b"N":
+            return payload
+        case b"Z":
+            try:
+                return zlib.decompress(payload)
+            except zlib.error as e:
+                logger.debug("BLTE zlib error: %s", e)
+                return None
+        case b"E":
+            logger.debug("BLTE: encrypted frame (not supported)")
             return None
-    elif encoding_byte == b"E":
-        logger.debug("BLTE: encrypted frame (not supported)")
-        return None
-    else:
-        return frame_data
+        case _:
+            return frame_data

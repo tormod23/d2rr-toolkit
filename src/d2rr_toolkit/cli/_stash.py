@@ -7,12 +7,17 @@ gem/rune items per cubemain recipes (``convert``). Shares the
 ``DEFAULT_DB_PATH`` helpers with :mod:`d2rr_toolkit.cli._archive`.
 """
 
-from __future__ import annotations
-
+import logging
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import typer
 from rich.table import Table
+
+if TYPE_CHECKING:
+    from d2rr_toolkit.models.character import ParsedItem
+
+logger = logging.getLogger(__name__)
 
 from d2rr_toolkit.database.modes import (
     DatabaseModeMismatchError,
@@ -29,6 +34,15 @@ from ._archive import (
     _resolve_game_mode,
 )
 from ._common import _do_load_game_data, _load_game_data
+import random as _rnd
+from d2rr_toolkit.database.section5_db import (
+    Section5DBError,
+    is_gem_cluster,
+    is_gem_code,
+    open_section5_db,
+)
+from d2rr_toolkit.game_data.item_names import get_item_names_db
+from d2rr_toolkit.parsers.d2i_parser import D2IParser
 
 
 # ──────────────────────────────────────────────────────────────
@@ -43,7 +57,6 @@ app.add_typer(stash_app, name="stash")
 
 def _is_gem_in_tab5(item_code: str) -> bool:
     """Return True if ``item_code`` belongs in D2I tab 5 (Gems / Materials / Runes)."""
-    from d2rr_toolkit.database.section5_db import is_gem_code
 
     return is_gem_code(item_code)
 
@@ -66,8 +79,6 @@ def stash_status(
         d2rr-toolkit stash status
         d2rr-toolkit stash status --mode hardcore
     """
-    from d2rr_toolkit.database.section5_db import open_section5_db
-    from d2rr_toolkit.game_data.item_names import get_item_names_db
 
     # Load names if available for display; failures are non-fatal and
     # fall through to raw item codes. The fallback is deliberate (the
@@ -90,7 +101,7 @@ def stash_status(
     def nm(c: str) -> str:
         return (names.get_base_item_name(c, "enUS") or c) if names.is_loaded() else c
 
-    game_mode: GameMode = mode.value  # type: ignore[assignment]
+    game_mode: GameMode = mode.value
     resolved_path = _resolve_db_path(game_mode, db_path_override=db_path)
     try:
         db = open_section5_db(game_mode, db_path=resolved_path)
@@ -102,7 +113,6 @@ def stash_status(
         templates = db.list_gem_templates()
         pool = db.get_gem_pool_count()
 
-        from rich.table import Table
 
         if stacks:
             tbl = Table(title=f"Non-Gem Stacks ({len(stacks)} codes)")
@@ -156,12 +166,6 @@ def stash_seed(
     """
     _load_game_data(save_file)
 
-    from d2rr_toolkit.database.section5_db import (
-        is_gem_code,
-        is_gem_cluster,
-        open_section5_db,
-    )
-    from d2rr_toolkit.parsers.d2i_parser import D2IParser
 
     try:
         game_mode = _resolve_game_mode(
@@ -181,7 +185,7 @@ def stash_seed(
         console.print("[yellow]Section 5 is empty - nothing to seed.[/]")
         return
 
-    def disp(it) -> int:
+    def disp(it: "ParsedItem") -> int:
         return it.quantity >> 1 if it.flags.simple else it.quantity
 
     resolved_path = _resolve_db_path(game_mode, db_path_override=db_path)
@@ -190,7 +194,6 @@ def stash_seed(
     except DatabaseModeMismatchError as e:
         err_console.print(f"[bold red]DB mode mismatch:[/] {e}")
         raise typer.Exit(1)
-    import random as _rnd
 
     rng = _rnd.Random()
     stacks_seeded = 0
@@ -253,12 +256,8 @@ def stash_convert(
         err_console.print("[red]Specify exactly one of --up or --down.[/]")
         raise typer.Exit(1)
 
-    from d2rr_toolkit.database.section5_db import (
-        Section5DBError,
-        open_section5_db,
-    )
 
-    game_mode: GameMode = mode.value  # type: ignore[assignment]
+    game_mode: GameMode = mode.value
     resolved_path = _resolve_db_path(game_mode, db_path_override=db_path)
     try:
         db = open_section5_db(game_mode, db_path=resolved_path)

@@ -31,14 +31,25 @@ Special stat groups displayed as one line:
  Extend StringsDatabase.get() calls to pass lang when i18n is needed.]
 """
 
-from __future__ import annotations
-
 import json
 import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Literal
+from typing import Any, Callable, Literal, TYPE_CHECKING
+
+# RollSource / StatRollRange / ItemRollContext live in the leaf module
+# :mod:`d2rr_toolkit.game_data._roll_types` so :mod:`affix_rolls` can
+# build :class:`StatRollRange` instances without importing back into
+# :mod:`property_formatter` (which would close a cycle through
+# :mod:`stat_breakdown`).  Re-exported here so external consumers can
+# keep importing them from this module.
+from d2rr_toolkit.game_data._roll_types import (
+    ItemRollContext,
+    RollSource,
+    StatRollRange,
+    _maybe_int,
+)
 
 if TYPE_CHECKING:
     from d2rr_toolkit.game_data.item_stat_cost import ItemStatCostDatabase, StatDefinition
@@ -47,6 +58,13 @@ if TYPE_CHECKING:
     from d2rr_toolkit.game_data.skills import SkillDatabase
     from d2rr_toolkit.game_data.stat_breakdown import StatBreakdown
     from d2rr_toolkit.meta.source_versions import SourceVersions
+from d2rr_toolkit.adapters.casc import read_game_data_bytes
+from d2rr_toolkit.game_data.affix_rolls import (
+    get_affix_roll_db,
+    load_affix_rolls,
+)
+from d2rr_toolkit.game_data.charstats import get_charstats_db
+from d2rr_toolkit.meta import cached_load
 
 logger = logging.getLogger(__name__)
 
@@ -151,6 +169,37 @@ def _strip_color(text: str) -> str:
     return re.sub(r"[ÿ\xff]c.", "", text, flags=re.DOTALL).strip()
 
 
+# ── breakdown hook (set by :mod:`stat_breakdown` at module load) ─────────────
+#
+# ``format_properties_grouped(breakdown=True)`` historically constructed a
+# ``StatBreakdownResolver`` itself, which forced a runtime import of
+# :mod:`stat_breakdown` and closed the
+# ``property_formatter -> stat_breakdown -> property_formatter`` cycle.
+# To keep this module dependency-free of ``stat_breakdown`` while preserving
+# the public API, the breakdown work now goes through a hook that
+# :mod:`stat_breakdown` registers via :func:`set_breakdown_hook` at its
+# module load time.  Callers who haven't imported ``stat_breakdown`` get a
+# warning and the un-breakdown'd output (graceful degradation).
+_BREAKDOWN_HOOK: Callable[..., list["FormattedProperty"]] | None = None
+
+
+def set_breakdown_hook(hook: Callable[..., list["FormattedProperty"]]) -> None:
+    """Register the per-stat-breakdown attribution callback.
+
+    Called exactly once by :mod:`d2rr_toolkit.game_data.stat_breakdown` at
+    its module load time.  The hook signature is::
+
+        hook(
+            formatted: list[FormattedProperty],
+            *,
+            isc_db, props_db, skills_db, item_types_db,
+            item, roll_context,
+        ) -> list[FormattedProperty]
+    """
+    global _BREAKDOWN_HOOK
+    _BREAKDOWN_HOOK = hook
+
+
 # ── D2R inline colour markup ─────────────────────────────────────────────────
 #
 # Reimagined's ``item-modifiers.json`` (and friends) embeds colour changes as
@@ -214,64 +263,6 @@ class FormattedSegment:
 # caches and downstream consumers keep loading unchanged.
 
 
-# Sources tracked in v1. New sources can land here + in the resolver
-# without breaking the ``Literal`` accept list for existing consumers -
-# they simply extend it.
-RollSource = Literal[
-    "unique",
-    "set",
-    "runeword",
-    "magic_prefix",
-    "magic_suffix",
-    "rare_prefix",
-    "rare_suffix",
-    # automod: automagic.txt contributions attached via
-    # ``ParsedItem.automod_id``.  Reserved; the plain ``resolve`` path
-    # doesn't emit this source directly (the automagic itype-filter
-    # rules for which rows actually apply to which items aren't fully
-    # mapped - suppressing avoids over-attribution on charms).
-    "automod",
-    # Reserved for future expansion; not emitted in current output:
-    "crafted",
-]
-
-
-@dataclass(frozen=True, slots=True)
-class StatRollRange:
-    """Possible roll window for a single stat on a single item.
-
-    ``min_value`` / ``max_value`` carry the roll bounds as they
-    appear in the source table - typically integers, but stored as
-    ``float`` so future fractional stats (e.g. percentage-per-level
-    coefficients) don't force a breaking change.
-
-    For stats where ``min_value == max_value`` the roll is
-    effectively fixed - :meth:`is_fixed` returns ``True`` and
-    presentation layers typically suppress both the perfect-roll
-    star and the ``[min-max]`` suffix (no visual value there).
-
-    All v1 sources use "bigger = better" semantics.  Stats where
-    smaller is better (rare negative-is-better affixes) surface
-    via ``is_perfect == True`` when ``current >= max`` and may
-    mislead the GUI slightly; this is deliberate - the inversion
-    flag ships later if anyone complains.
-    """
-
-    min_value: float
-    max_value: float
-    source: "RollSource"
-
-    def is_fixed(self) -> bool:
-        """``True`` when the roll window has zero width."""
-        return self.min_value == self.max_value
-
-    def is_perfect(self, current_value: float) -> bool:
-        """``True`` when the rolled value has reached (or exceeded)
-        the max of its roll window.  The ``>=`` is deliberate so
-        integer stats that rolled exactly at max show as perfect."""
-        return current_value >= self.max_value
-
-
 def _range_contains(
     rng: "StatRollRange",
     current_value: float,
@@ -313,181 +304,6 @@ def _range_contains(
         # subtract, for the stats they affect.
         return True
     return current_value <= rng.max_value
-
-
-@dataclass(frozen=True, slots=True)
-class ItemRollContext:
-    """Everything the formatter needs to resolve roll ranges.
-
-    Build once per item (via :meth:`from_parsed_item`) and thread the
-    same instance through :meth:`format_properties_grouped` and
-    :meth:`format_prop_structured`.  Pass ``None`` to skip roll
-    resolution - identical to the behaviour before roll-range
-    resolution landed.
-
-    Every field is optional because an item may carry none of them
-    (plain base item, magic item with only a suffix, ...).  The
-    resolver reads what is present and leaves the rest untouched.
-
-    Attributes:
-        quality: The D2R quality code (2..8), mostly informational -
-            the other fields already disambiguate the actual lookup
-            table to consult.  Included so a future resolver can
-            decide e.g. that Crafted items behave differently from
-            Rare without the caller having to redo the lookup.
-        unique_id: ``*ID`` value from ``uniqueitems.txt`` (NOT the
-            row index - Reimagined has separator rows that skew the
-            two).  Matches ``ParsedItem.unique_type_id``.
-        set_id: ``*ID`` from ``setitems.txt``.  Matches
-            ``ParsedItem.set_item_id``.
-        runeword_id: Row index into ``runes.txt``.  Matches
-            ``ParsedItem.runeword_id``.
-        prefix_ids: Row indices into ``magicprefix.txt``.  Length 0-1
-            for Magic items (one prefix), 0-3 for Rare / Crafted
-            items.  Derived from ``ParsedItem.prefix_id`` or from the
-            even-index slots of ``rare_affix_slots`` + ``rare_affix_ids``.
-        suffix_ids: Row indices into ``magicsuffix.txt``.  Same
-            shape as ``prefix_ids``.  Derived from
-            ``ParsedItem.suffix_id`` or from odd-index slots.
-    """
-
-    quality: int | None = None
-    unique_id: int | None = None
-    set_id: int | None = None
-    runeword_id: int | None = None
-    prefix_ids: tuple[int, ...] = ()
-    suffix_ids: tuple[int, ...] = ()
-    # automagic.txt row index (``ParsedItem.automod_id`` - 0-based
-    # after the has_gfx=1 carry-bit masking; 0 means "no automod
-    # applied").  Consulted by :class:`StatBreakdownResolver` when
-    # a magic-quality item carries a residual the standard affix
-    # sources don't explain - a Reimagined follow-up signal, not a
-    # direct contribution (see ``affix_rolls._iter_sources``).
-    automod_id: int | None = None
-
-    # ── Stat-modifier flags (Reimagined layer on top of base rolls) ─
-    # Any of these makes the rolled stat's observed value legitimately
-    # higher than its source-table max: Corruption adds free mods,
-    # Enchantment lets the player pile capped bonuses on top, Ethereal
-    # inflates defense by 50%, and Runeword items get their full RW
-    # stat block grafted onto the base item.  The consistency gate in
-    # the formatter loosens the ``observed <= range.max`` check and
-    # suppresses the perfect-roll star whenever any of these is True,
-    # so legitimately modified items don't falsely report "parser
-    # mismatch".  A dedicated StatBreakdownResolver (follow-up)
-    # will eventually subtract out the precise modifier contributions
-    # and restore per-source perfection flags - for now this is the
-    # conservative, zero-risk approximation.
-    is_corrupted: bool = False
-    is_enchanted: bool = False
-    is_ethereal: bool = False
-    is_runeword: bool = False
-
-    @property
-    def has_stat_modifiers(self) -> bool:
-        """Any modifier system that can push stats above their base range."""
-        return self.is_corrupted or self.is_enchanted or self.is_ethereal or self.is_runeword
-
-    @classmethod
-    def from_parsed_item(cls, item: object) -> "ItemRollContext":
-        """Pull the relevant fields off a :class:`ParsedItem`.
-
-        Handles the convention split between Magic items
-        (single ``prefix_id`` / ``suffix_id``) and Rare / Crafted
-        items (parallel ``rare_affix_ids`` + ``rare_affix_slots``
-        lists, where slot parity distinguishes prefix from suffix).
-
-        The ``item`` type is declared as ``object`` to avoid
-        pulling ``ParsedItem`` into this module's import graph;
-        the field reads are duck-typed and tolerant of missing
-        attributes.
-        """
-        quality = _maybe_int(getattr(getattr(item, "extended", None), "quality", None))
-
-        unique_id = _maybe_int(getattr(item, "unique_type_id", None))
-        set_id = _maybe_int(getattr(item, "set_item_id", None))
-        rw_id = _maybe_int(getattr(item, "runeword_id", None))
-
-        prefix_ids: tuple[int, ...] = ()
-        suffix_ids: tuple[int, ...] = ()
-
-        # Magic items (quality=4) use scalar prefix_id / suffix_id.
-        # 0 is the "no affix" sentinel and MUST NOT be treated as a
-        # row index (row 0 of magicprefix.txt is a header / separator).
-        scalar_prefix = _maybe_int(getattr(item, "prefix_id", None))
-        scalar_suffix = _maybe_int(getattr(item, "suffix_id", None))
-        if scalar_prefix:
-            prefix_ids = (scalar_prefix,)
-        if scalar_suffix:
-            suffix_ids = (scalar_suffix,)
-
-        # Rare / Crafted items (quality=6/8) use parallel rare_affix_ids
-        # + rare_affix_slots lists.  Even slots -> prefix table, odd ->
-        # suffix table.  See ``project_rare_misc_7slot_qsd`` + the
-        # memory note on the parallel-slot convention.
-        rare_ids = list(getattr(item, "rare_affix_ids", []) or [])
-        rare_slots = list(getattr(item, "rare_affix_slots", []) or [])
-        if rare_ids and len(rare_slots) == len(rare_ids):
-            ps = tuple(aid for aid, slot in zip(rare_ids, rare_slots) if aid and (slot % 2) == 0)
-            ss = tuple(aid for aid, slot in zip(rare_ids, rare_slots) if aid and (slot % 2) == 1)
-            if ps:
-                prefix_ids = ps
-            if ss:
-                suffix_ids = ss
-
-        # ── Modifier detection ───────────────────────────────────────
-        # Corruption: item_corrupted (stat 361) present with any
-        # non-zero value.  Both phase-1 (value=1) and phase-2 (value=2)
-        # states can legitimately grow the observed stats above their
-        # base ranges - phase-1 doesn't yet pay out bonuses but the
-        # tolerance is harmless there.
-        # Enchantment: Reimagined fake-stats 392..395 flag that the
-        # player has access to additional upgrade slots; the actual
-        # enchant mods flow as normal stats in the same list.
-        # Ethereal / Runeword: straight from the item flags.
-        magical = getattr(item, "magical_properties", None) or ()
-        stat_ids = {p.get("stat_id") for p in magical if isinstance(p, dict)}
-        is_corrupted = 361 in stat_ids
-        is_enchanted = bool(stat_ids & {392, 393, 394, 395})
-        flags = getattr(item, "flags", None)
-        is_ethereal = bool(getattr(flags, "ethereal", False))
-        is_runeword = bool(getattr(flags, "runeword", False))
-
-        # automod_id is meaningful for bf1=False items (charms, tools,
-        # orbs) AND for bf1=True weapons/armor where the slot is
-        # genuinely present (see project_parser_padding_and_automod).
-        # Rare and Crafted items (quality=6/8) store their mods via
-        # rare_affix_ids - the automod_id field is still populated but
-        # its contribution is already represented in the rare affix
-        # chain, so attributing it separately would double-count.
-        raw_automod = _maybe_int(getattr(item, "automod_id", None))
-        if raw_automod is not None and quality in (6, 8):
-            raw_automod = None
-        automod_id = raw_automod
-
-        return cls(
-            quality=quality,
-            unique_id=unique_id,
-            set_id=set_id,
-            runeword_id=rw_id,
-            prefix_ids=prefix_ids,
-            suffix_ids=suffix_ids,
-            automod_id=automod_id,
-            is_corrupted=is_corrupted,
-            is_enchanted=is_enchanted,
-            is_ethereal=is_ethereal,
-            is_runeword=is_runeword,
-        )
-
-
-def _maybe_int(v: object) -> int | None:
-    """Best-effort integer coercion.  Empty / None / non-numeric -> None."""
-    if v is None:
-        return None
-    try:
-        return int(v)
-    except (TypeError, ValueError):
-        return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -657,7 +473,7 @@ def _apply_template(
     # Replace paired %d patterns for charged/aura (secondary value after first %d)
     first_d_replaced = False
 
-    def replace_d(m: re.Match) -> str:
+    def replace_d(m: re.Match[str]) -> str:
         nonlocal first_d_replaced, value, secondary
         if not first_d_replaced:
             first_d_replaced = True
@@ -735,7 +551,7 @@ class PropertyFormatter:
 
     def format_prop(
         self,
-        prop: dict,
+        prop: dict[str, Any],
         isc_db: "ItemStatCostDatabase",
         skills_db: "SkillDatabase | None" = None,
         lang: str = "enUS",
@@ -754,7 +570,7 @@ class PropertyFormatter:
 
     def format_prop_structured(
         self,
-        prop: dict,
+        prop: dict[str, Any],
         isc_db: "ItemStatCostDatabase",
         skills_db: "SkillDatabase | None" = None,
         lang: str = "enUS",
@@ -783,6 +599,7 @@ class PropertyFormatter:
         fp = _make_formatted(raw, source_stat_ids=ids)
         if fp is None or roll_context is None or not ids:
             return fp
+        assert isinstance(stat_id, int)  # narrowed by the `not ids` guard
         rng = self._resolve_range_for_stat(
             stat_id=stat_id,
             prop=prop,
@@ -819,7 +636,7 @@ class PropertyFormatter:
     # ── Roll-range helpers ─────────────────────────────────────────────────
 
     @staticmethod
-    def _current_value_for_perfection(prop: dict, stat_id: int) -> float:
+    def _current_value_for_perfection(prop: dict[str, Any], stat_id: int) -> float:
         """Pull the rolled value out of ``prop`` for perfection checks.
 
         Most props expose ``value``; encode=2 (skill-on-event) stats
@@ -845,7 +662,7 @@ class PropertyFormatter:
         self,
         *,
         stat_id: int,
-        prop: dict,
+        prop: dict[str, Any],
         roll_context: "ItemRollContext",
         isc_db: "ItemStatCostDatabase",
         props_db: "PropertiesDatabase | None",
@@ -859,15 +676,6 @@ class PropertyFormatter:
         :meth:`is_loaded` gate doubles as the availability check.
         """
         if props_db is None:
-            return None
-        try:
-            from d2rr_toolkit.game_data.affix_rolls import (
-                get_affix_roll_db,
-                load_affix_rolls,
-            )
-            from d2rr_toolkit.game_data.charstats import get_charstats_db
-        except ImportError:
-            logger.warning("affix_rolls / charstats modules unavailable")
             return None
         db = get_affix_roll_db()
         if not db.is_loaded():
@@ -887,7 +695,7 @@ class PropertyFormatter:
         param_raw = prop.get("param", 0)
         try:
             param = int(param_raw) if param_raw is not None else 0
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             param = 0
         return db.resolve(
             roll_context,
@@ -901,7 +709,7 @@ class PropertyFormatter:
 
     def _format_prop_raw(
         self,
-        prop: dict,
+        prop: dict[str, Any],
         isc_db: "ItemStatCostDatabase",
         skills_db: "SkillDatabase | None" = None,
         lang: str = "enUS",
@@ -988,7 +796,6 @@ class PropertyFormatter:
         # descfunc=13: "+X to [ClassName] Skill Levels"
         # param = class index (0=Amazon ... 7=Warlock).
         if descfunc == 13:
-            from d2rr_toolkit.game_data.charstats import get_charstats_db
 
             cls_name = get_charstats_db().get_class_name(param) or f"Class{param}"
             sign = "+" if value >= 0 else ""
@@ -998,7 +805,6 @@ class PropertyFormatter:
         # param = (class_index << 3) | tab_within_class.
         # Lookup: charstats -> StrSklTabItem key -> item-modifiers.json template.
         if descfunc == 14:
-            from d2rr_toolkit.game_data.charstats import get_charstats_db
 
             cdb = get_charstats_db()
             cls_idx = param >> 3
@@ -1006,7 +812,7 @@ class PropertyFormatter:
             cls_name = cdb.get_class_name(cls_idx) or f"Class{cls_idx}"
             tab_key = cdb.get_skill_tab_key(cls_idx, tab_idx)
             if tab_key:
-                tmpl = self._templates.get(tab_key)
+                tmpl = self._templates.get(tab_key, "")
                 if tmpl:
                     # Template like "%+d to Traps" -> apply value, then append class
                     line = _apply_template(tmpl, value)
@@ -1044,7 +850,7 @@ class PropertyFormatter:
 
     def format_properties_grouped(
         self,
-        props: list[dict],
+        props: list[dict[str, Any]],
         isc_db: "ItemStatCostDatabase",
         skills_db: "SkillDatabase | None" = None,
         lang: str = "enUS",
@@ -1117,15 +923,13 @@ class PropertyFormatter:
         if not breakdown:
             return formatted
 
-        # Per-stat breakdown attribution path - opt-in per call.
-        # Attribute every stat's observed value to its source
-        # (``base_roll`` / ``corruption`` / ``enchantment`` /
-        # ``ethereal_bonus`` / ``unknown_modifier`` / ``residual``)
-        # via :class:`StatBreakdownResolver`.  Requires ``item`` so
-        # the resolver can read item_code + flags for corruption
-        # bucketing + ethereal bonus detection; requires ``props_db``
-        # for code -> stat expansion.  When either is missing the call
-        # returns without breakdown data (logged).
+        # Per-stat breakdown attribution is delegated to the hook
+        # registered by :mod:`d2rr_toolkit.game_data.stat_breakdown` at
+        # its module load time.  Going through a hook (instead of
+        # importing ``StatBreakdownResolver`` directly) keeps the
+        # ``property_formatter -> stat_breakdown`` edge out of the
+        # import graph, which would otherwise close the cycle
+        # ``property_formatter <-> stat_breakdown``.
         if item is None or props_db is None or roll_context is None:
             logger.warning(
                 "format_properties_grouped(breakdown=True) requires "
@@ -1133,116 +937,27 @@ class PropertyFormatter:
                 "un-attributed output.",
             )
             return formatted
-
-        try:
-            from d2rr_toolkit.game_data.affix_rolls import (
-                get_affix_roll_db,
-                load_affix_rolls,
+        if _BREAKDOWN_HOOK is None:
+            logger.warning(
+                "format_properties_grouped(breakdown=True) called but "
+                "no breakdown hook is registered; import "
+                "d2rr_toolkit.game_data.stat_breakdown to enable "
+                "per-stat attribution.",
             )
-            from d2rr_toolkit.game_data.corruption_rolls import (
-                get_corruption_db,
-                load_corruption_rolls,
-            )
-            from d2rr_toolkit.game_data.enchantment_recipes import (
-                get_enchantment_db,
-                load_enchantment_recipes,
-            )
-            from d2rr_toolkit.game_data.stat_breakdown import (
-                StatBreakdownResolver,
-            )
-        except ImportError:
-            logger.warning("stat breakdown imports failed; skipping attribution")
             return formatted
-
-        # Lazy-load the three data sources the resolver needs.  The
-        # cached_load helper makes repeat calls free.
-        if not get_affix_roll_db().is_loaded():
-            try:
-                load_affix_rolls()
-            except (OSError, ValueError, KeyError) as exc:
-                logger.warning("affix_rolls auto-load failed: %s", exc)
-        if not get_corruption_db().is_loaded():
-            try:
-                load_corruption_rolls()
-            except (OSError, ValueError, KeyError) as exc:
-                logger.warning("corruption_rolls auto-load failed: %s", exc)
-        if not get_enchantment_db().is_loaded():
-            try:
-                load_enchantment_recipes()
-            except (OSError, ValueError, KeyError) as exc:
-                logger.warning("enchantment_recipes auto-load failed: %s", exc)
-
-        resolver = StatBreakdownResolver(
-            affix_db=get_affix_roll_db(),
-            corruption_db=get_corruption_db(),
-            enchant_db=get_enchantment_db(),
+        return _BREAKDOWN_HOOK(
+            formatted,
             isc_db=isc_db,
             props_db=props_db,
             skills_db=skills_db,
             item_types_db=item_types_db,
+            item=item,
+            roll_context=roll_context,
         )
-        breakdowns = resolver.resolve_item(item, roll_context)
-
-        # Stamp each FormattedProperty's ``breakdown`` field.  When a
-        # single line collapses multiple stats (damage pair), we pick
-        # the first stat's breakdown as representative - the GUI can
-        # walk ``source_stat_ids`` if it needs per-half detail.
-        out: list[FormattedProperty] = []
-        for fp in formatted:
-            sid = fp.source_stat_ids[0] if fp.source_stat_ids else None
-            bd = breakdowns.get(sid) if sid is not None else None
-            # Joint-perfection for multi-stat display lines
-            # (``Adds X-Y Fire Damage`` collapses stats 48 + 49 into
-            # one line).  The star must only appear when EVERY stat
-            # in the group rolled at its range max - a max-min-side
-            # + partial-max-side pair (4/max=4 + 7/max=8) must NOT
-            # display the star.  The per-stat breakdown only attributes
-            # ONE stat, so take ``is_perfect`` as the conjunction of
-            # ``breakdown.is_perfect_roll`` across every source_stat_id
-            # the line covers.
-            is_perfect = fp.is_perfect
-            if bd is not None:
-                per_stat_perfections: list[bool] = []
-                for s in fp.source_stat_ids:
-                    sbd = breakdowns.get(s)
-                    if sbd is not None:
-                        per_stat_perfections.append(sbd.is_perfect_roll)
-                if per_stat_perfections:
-                    is_perfect = all(per_stat_perfections)
-                else:
-                    is_perfect = bd.is_perfect_roll
-                # For multi-stat display lines (damage-pair collapses
-                # like "Adds 1-5 Cold Damage"), the primary stat's
-                # breakdown doesn't reflect partial perfection on the
-                # follower side.  A GUI that reads
-                # ``fp.breakdown.is_perfect_roll`` directly would see
-                # stat-54-only perfection (True) and render the star
-                # even though the max-side stat 55 rolled below its
-                # ceiling.  Override the attached breakdown's
-                # ``is_perfect_roll`` with the joint value so the
-                # breakdown is consistent with the line's
-                # ``is_perfect`` flag - callers that need the per-stat
-                # perfection can still query ``breakdowns[stat_id]``
-                # directly.
-                if len(fp.source_stat_ids) > 1 and bd.is_perfect_roll != is_perfect:
-                    from dataclasses import replace as _dc_replace
-
-                    bd = _dc_replace(bd, is_perfect_roll=is_perfect)
-            out.append(
-                FormattedProperty(
-                    segments=fp.segments,
-                    plain_text=fp.plain_text,
-                    source_stat_ids=fp.source_stat_ids,
-                    roll_ranges=fp.roll_ranges,
-                    is_perfect=is_perfect,
-                    breakdown=bd,
-                )
-            )
-        return out
 
     def format_properties_grouped_plain(
         self,
-        props: list[dict],
+        props: list[dict[str, Any]],
         isc_db: "ItemStatCostDatabase",
         skills_db: "SkillDatabase | None" = None,
         lang: str = "enUS",
@@ -1269,7 +984,7 @@ class PropertyFormatter:
 
     def _format_properties_grouped_raw(
         self,
-        props: list[dict],
+        props: list[dict[str, Any]],
         isc_db: "ItemStatCostDatabase",
         skills_db: "SkillDatabase | None" = None,
         lang: str = "enUS",
@@ -1304,7 +1019,7 @@ class PropertyFormatter:
         # the NEGATIVE of the original index as the secondary key
         # gives us the reverse-insertion tie behavior without
         # disturbing the primary priority order.
-        def _prio(entry: tuple[int, dict]) -> tuple[int, int]:
+        def _prio(entry: tuple[int, dict[str, Any]]) -> tuple[int, int]:
             idx, p = entry
             sid = p.get("stat_id", -1)
             sd = isc_db.get(sid)
@@ -1318,7 +1033,7 @@ class PropertyFormatter:
         props = [p for _, p in sorted(list(enumerate(props)), key=_prio)]
 
         # Build index: stat_id -> prop for fast lookup
-        stat_to_prop: dict[int, dict] = {p["stat_id"]: p for p in props if "stat_id" in p}
+        stat_to_prop: dict[int, dict[str, Any]] = {p["stat_id"]: p for p in props if "stat_id" in p}
 
         already_handled: set[int] = set()
 
@@ -1374,7 +1089,9 @@ class PropertyFormatter:
             members = [stat_to_prop.get(sid) for sid in stat_ids]
             if not all(p is not None for p in members):
                 continue
-            values = [p["value"] for p in members]  # type: ignore[union-attr]
+            # ``all(... is not None ...)`` already narrowed every entry
+            # but mypy can't prove it across a list comprehension.
+            values = [p["value"] for p in members if p is not None]
             if len(set(values)) != 1:
                 continue
             raw_line = line_builder(values[0])
@@ -1428,18 +1145,18 @@ class PropertyFormatter:
             if stat_id in DAMAGE_STAT_GROUPS:
                 raw_line = self._format_damage_group(stat_id, prop, stat_to_prop)
                 if raw_line:
-                    follower_ids = tuple(
+                    present_followers: tuple[int, ...] = tuple(
                         fid for fid in DAMAGE_STAT_GROUPS[stat_id] if fid in stat_to_prop
                     )
                     fp = _make_formatted(
                         raw_line,
-                        source_stat_ids=(stat_id, *follower_ids),
+                        source_stat_ids=(stat_id, *present_followers),
                     )
                     if fp is not None:
                         fp = self._attach_damage_pair_roll_ranges(
                             fp,
                             lead_prop=prop,
-                            follower_props=[stat_to_prop[fid] for fid in follower_ids],
+                            follower_props=[stat_to_prop[fid] for fid in present_followers],
                             roll_context=roll_context,
                             isc_db=isc_db,
                             props_db=props_db,
@@ -1489,7 +1206,7 @@ class PropertyFormatter:
         self,
         fp: FormattedProperty,
         *,
-        prop: dict,
+        prop: dict[str, Any],
         stat_id: int,
         roll_context: "ItemRollContext | None",
         isc_db: "ItemStatCostDatabase",
@@ -1542,8 +1259,8 @@ class PropertyFormatter:
         self,
         fp: FormattedProperty,
         *,
-        lead_prop: dict,
-        follower_props: list[dict],
+        lead_prop: dict[str, Any],
+        follower_props: list[dict[str, Any]],
         roll_context: "ItemRollContext | None",
         isc_db: "ItemStatCostDatabase",
         props_db: "PropertiesDatabase | None",
@@ -1577,7 +1294,7 @@ class PropertyFormatter:
         # the GUI.  The length is still attributed in the per-stat
         # breakdown for the individual length stat.
         _LENGTH_STATS: frozenset[int] = frozenset({56, 59})
-        ordered: list[dict] = [
+        ordered: list[dict[str, Any]] = [
             lead_prop,
             *[p for p in follower_props if p.get("stat_id") not in _LENGTH_STATS],
         ]
@@ -1626,6 +1343,7 @@ class PropertyFormatter:
         # tuple length == 2 when the sides came from genuinely
         # different slots (e.g. separate ``dmg-min`` + ``dmg-max``
         # rolls with distinct ranges - same display, different bins).
+        collapsed: tuple["StatRollRange", ...]
         if len(ranges) >= 2 and all(r == ranges[0] for r in ranges[1:]):
             collapsed = (ranges[0],)
         else:
@@ -1692,7 +1410,7 @@ class PropertyFormatter:
         fp: FormattedProperty,
         *,
         stat_ids: tuple[int, ...],
-        stat_to_prop: dict[int, dict],
+        stat_to_prop: dict[int, dict[str, Any]],
         roll_context: "ItemRollContext | None",
         isc_db: "ItemStatCostDatabase",
         props_db: "PropertiesDatabase | None",
@@ -1726,8 +1444,8 @@ class PropertyFormatter:
         if roll_context is None:
             return fp
 
-        ranges: list = []
-        current_vals: list[int] = []
+        ranges: list[Any] = []
+        current_vals: list[float] = []
         for sid in stat_ids:
             prop = stat_to_prop.get(sid)
             if prop is None:
@@ -1827,7 +1545,6 @@ class PropertyFormatter:
         # ── Class skill codes (ama, sor, nec, pal, bar, dru, ass, war) ────
         # These map to stat 83 (item_addclassskills) with param = class index.
         if code in self._CLASS_CODE_TO_INDEX:
-            from d2rr_toolkit.game_data.charstats import get_charstats_db
 
             cls_idx = self._CLASS_CODE_TO_INDEX[code]
             cls_name = get_charstats_db().get_class_name(cls_idx) or code
@@ -1972,9 +1689,8 @@ class PropertyFormatter:
             key = stat_def.descstrpos
             tmpl = self._templates.get(key, "") if key else ""
             if tmpl:
-                import re as _re
 
-                line = _re.sub(r"%\+?d", val_str, tmpl)
+                line = re.sub(r"%\+?d", val_str, tmpl)
                 line = line.replace("%%", "%")
             else:
                 line = f"{val_str} {stat_def.name or key}"
@@ -2041,19 +1757,19 @@ class PropertyFormatter:
         # Other descfuncs either inject %d into the template (19-based
         # standard) or use custom paths earlier (11, 13, 14, 16, 20).
         if "%d" not in template and "%+d" not in template:
-            val_str: str | None = None
+            value_str: str | None = None
             descfunc = stat_def.descfunc
             descval = stat_def.descval
             if descval != 0 and descfunc not in (0, 3):
                 if descfunc in (1, 6, 12):
-                    val_str = f"{value:+d}"  # "+1" / "-1"
+                    value_str = f"{value:+d}"  # "+1" / "-1"
                 elif descfunc in (2, 5, 7, 10):
-                    val_str = f"{value}%"
+                    value_str = f"{value}%"
                 elif descfunc in (4, 8):
-                    val_str = f"{value:+d}%" if value != 0 else "0%"
+                    value_str = f"{value:+d}%" if value != 0 else "0%"
                 elif descfunc == 9:
-                    val_str = f"{value}"
-            if val_str is not None:
+                    value_str = f"{value}"
+            if value_str is not None:
                 # name-placeholder substitution still needs to happen
                 # for templates like ``"+%d to %s"`` - but if we land
                 # here the template has no %d, so name_str is the only
@@ -2065,15 +1781,15 @@ class PropertyFormatter:
                     if name_str2:
                         body = body.replace("%s", name_str2, 1)
                 if descval == 1:
-                    return f"{val_str} {body}".strip()
+                    return f"{value_str} {body}".strip()
                 if descval == 2:
-                    return f"{body} {val_str}".strip()
+                    return f"{body} {value_str}".strip()
 
         return _apply_template(template, value, 0, name_str, name_str2)
 
     def _format_skill_on_event(
         self,
-        prop: dict,
+        prop: dict[str, Any],
         stat_def: "StatDefinition",
         skills_db: "SkillDatabase | None",
     ) -> str | None:
@@ -2098,7 +1814,7 @@ class PropertyFormatter:
         # Replace first %d with chance, second with level
         count = [0]
 
-        def repl(m: re.Match) -> str:
+        def repl(m: re.Match[str]) -> str:
             count[0] += 1
             return str(chance) if count[0] == 1 else str(level)
 
@@ -2112,7 +1828,7 @@ class PropertyFormatter:
 
     def _format_charged_skill(
         self,
-        prop: dict,
+        prop: dict[str, Any],
         stat_def: "StatDefinition",
         skills_db: "SkillDatabase | None",
     ) -> str | None:
@@ -2135,7 +1851,7 @@ class PropertyFormatter:
         vals = [level, charges, max_charges]
         idx = [0]
 
-        def repl(m: re.Match) -> str:
+        def repl(m: re.Match[str]) -> str:
             v = vals[idx[0]] if idx[0] < len(vals) else 0
             idx[0] += 1
             return str(v)
@@ -2150,8 +1866,8 @@ class PropertyFormatter:
     def _format_damage_group(
         self,
         lead_stat_id: int,
-        lead_prop: dict,
-        stat_to_prop: dict[int, dict],
+        lead_prop: dict[str, Any],
+        stat_to_prop: dict[int, dict[str, Any]],
     ) -> str | None:
         """Format a damage group (min+max or enhanced damage pair) as one line."""
         template = DAMAGE_GROUP_TEMPLATES.get(lead_stat_id)
@@ -2244,7 +1960,6 @@ def load_property_formatter(
             instance preferred across batched loaders.
         cache_dir: Optional cache root override.
     """
-    from d2rr_toolkit.meta import cached_load
 
     def _build() -> None:
         _build_property_formatter_from_source()
@@ -2262,7 +1977,6 @@ def load_property_formatter(
 
 def _build_property_formatter_from_source() -> None:
     """Legacy parse path - fetch JSON via CASC and load into the singleton."""
-    from d2rr_toolkit.adapters.casc import read_game_data_bytes
 
     casc_path = "data:data/local/lng/strings/item-modifiers.json"
     raw = read_game_data_bytes(casc_path)

@@ -14,24 +14,24 @@ binary value is literally that row index.
 [SOURCE: hireling.txt from excel/reimagined/ - always read at runtime]
 """
 
-from __future__ import annotations
-
 import csv
 import json
 import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from d2rr_toolkit.meta.source_versions import SourceVersions
+from d2rr_toolkit.adapters.casc import read_game_data_rows
+from d2rr_toolkit.meta import cached_load
 
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(slots=True)
 class HirelingRow:
     """One row of hireling.txt. Indexed by the binary merc_type field."""
 
@@ -74,7 +74,7 @@ class HirelingDatabase:
     def load_from_rows(self, rows: list[dict[str, str]], *, source: str = "<rows>") -> None:
         """Populate the database from pre-parsed rows (Iron Rule entry point)."""
 
-        def _int(row: dict, key: str) -> int:
+        def _int(row: dict[str, Any], key: str) -> int:
             try:
                 return int(row.get(key, "0") or "0")
             except ValueError:
@@ -233,7 +233,6 @@ def load_hireling(
             rely on the platformdirs default
             (``%LOCALAPPDATA%/d2rr-toolkit/data_cache`` on Windows).
     """
-    from d2rr_toolkit.meta import cached_load
 
     def _build() -> None:
         """Populate the :class:`HirelingDatabase` via the Iron Rule.
@@ -241,7 +240,6 @@ def load_hireling(
         Does not touch the merc-name table - use :func:`load_merc_names`
         separately if name resolution is needed.
         """
-        from d2rr_toolkit.adapters.casc import read_game_data_rows
 
         casc_path = "data:data/global/excel/hireling.txt"
         rows = read_game_data_rows(casc_path)

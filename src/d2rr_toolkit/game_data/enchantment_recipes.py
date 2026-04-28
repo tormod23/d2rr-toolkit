@@ -27,15 +27,16 @@ recipes could explain it, :class:`StatBreakdownResolver` returns
 ``ambiguity="multiple"`` and lets the caller disambiguate.
 """
 
-from __future__ import annotations
-
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from d2rr_toolkit.meta.source_versions import SourceVersions
+from d2rr_toolkit.adapters.casc import read_game_data_rows
+from d2rr_toolkit.meta import cached_load
 
 logger = logging.getLogger(__name__)
 
@@ -215,7 +216,7 @@ class EnchantmentRecipeDatabase:
         self,
         *,
         stat_id: int,
-        stat_ids_for_code: "object",
+        stat_ids_for_code: Callable[[str], set[int]],
         bucket: str,
     ) -> list[tuple[EnchantmentRecipe, EnchantmentMod]]:
         """Return every (recipe, mod) pair for a given bucket whose mod's
@@ -341,10 +342,8 @@ def load_enchantment_recipes(
     cache_dir: "Path | None" = None,
 ) -> None:
     """Populate the process-wide :class:`EnchantmentRecipeDatabase`."""
-    from d2rr_toolkit.meta import cached_load
 
     def _build() -> None:
-        from d2rr_toolkit.adapters.casc import read_game_data_rows
 
         rows = read_game_data_rows("data:data/global/excel/cubemain.txt")
         if not rows:

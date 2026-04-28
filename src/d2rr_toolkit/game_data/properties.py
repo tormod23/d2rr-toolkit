@@ -15,8 +15,6 @@ Lookup chain for display:
 [SOURCE: excel/reimagined/properties.txt - always read at runtime]
 """
 
-from __future__ import annotations
-
 import csv
 import logging
 from dataclasses import dataclass, field
@@ -25,13 +23,16 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from d2rr_toolkit.game_data.item_stat_cost import ItemStatCostDatabase
+    from d2rr_toolkit.meta.source_versions import SourceVersions
+from d2rr_toolkit.adapters.casc import read_game_data_rows
+from d2rr_toolkit.meta import cached_load
 
 logger = logging.getLogger(__name__)
 
 MAX_PROP_STATS = 7  # properties.txt supports up to 7 stat slots per code
 
 
-@dataclass
+@dataclass(slots=True)
 class PropertyStatSlot:
     """One stat slot within a property definition."""
 
@@ -41,7 +42,7 @@ class PropertyStatSlot:
     val: str  # additional value modifier (usually empty)
 
 
-@dataclass
+@dataclass(slots=True)
 class PropertyDefinition:
     """Definition of one property code from properties.txt."""
 
@@ -172,11 +173,9 @@ def load_properties(
             rely on the platformdirs default
             (``%LOCALAPPDATA%/d2rr-toolkit/data_cache`` on Windows).
     """
-    from d2rr_toolkit.meta import cached_load
 
     def _build() -> None:
         """Populate the :class:`PropertiesDatabase` via the Iron Rule."""
-        from d2rr_toolkit.adapters.casc import read_game_data_rows
 
         casc_path = "data:data/global/excel/properties.txt"
         rows = read_game_data_rows(casc_path)

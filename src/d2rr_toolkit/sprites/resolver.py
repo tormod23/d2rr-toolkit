@@ -22,8 +22,6 @@ Usage::
     png = resolver.get_sprite_by_invfile("invring1", base_code="rin")
 """
 
-from __future__ import annotations
-
 import logging
 import re
 from pathlib import Path
@@ -31,6 +29,12 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from d2rr_toolkit.adapters.casc.reader import CASCReader
+import csv
+from d2rr_toolkit.adapters.casc.sprites import (
+    decode_dc6,
+    decode_sprite,
+)
+from d2rr_toolkit.config import get_game_paths
 
 logger = logging.getLogger(__name__)
 
@@ -199,7 +203,6 @@ class SpriteResolver:
         """
         if self._casc is None:
             return None
-        from d2rr_toolkit.adapters.casc.sprites import decode_sprite
 
         data = self._casc.read_file(casc_path)
         if data and data[:4] == b"SpA1":
@@ -253,8 +256,6 @@ class SpriteResolver:
         hd_sprite_ckeys: dict[str, str],
     ) -> None:
         """Map unique invfile names to CASC CKeys via items.json asset paths."""
-        import csv
-        from d2rr_toolkit.config import get_game_paths
 
         gp = get_game_paths()
         unique_txt = gp.reimagined_excel / "uniqueitems.txt"
@@ -292,7 +293,6 @@ class SpriteResolver:
         if not ckey_hex:
             return None
         try:
-            from d2rr_toolkit.adapters.casc.sprites import decode_sprite
 
             ckey = bytes.fromhex(ckey_hex)
             data = self._casc.read_by_ckey(ckey)
@@ -307,7 +307,6 @@ class SpriteResolver:
         if self._mod_hd_dir is None:
             return None
 
-        from d2rr_toolkit.adapters.casc.sprites import decode_sprite
 
         asset_path = self._items_json.get(item_code, "")
         if not asset_path:
@@ -384,12 +383,12 @@ class SpriteResolver:
         Tries mod HD first (checking all three top-level categories),
         then CASC. Returns None if not found anywhere.
         """
-        from d2rr_toolkit.adapters.casc.sprites import decode_sprite
 
         if not asset_path:
             return None
         sprite_filename = asset_path.rsplit("/", 1)[-1] + ".sprite"
         subpath = asset_path.rsplit("/", 1)[0] if "/" in asset_path else ""
+        data: bytes | None
 
         # 1. Mod HD directory - try all three top-level categories
         if self._mod_hd_dir:
@@ -414,7 +413,7 @@ class SpriteResolver:
                 else:
                     casc_path = f"data:data/hd/global/ui/items/{top}/{sprite_filename}"
                 data = self._casc.read_file(casc_path)
-                if data and data[:4] == b"SpA1":
+                if data is not None and data[:4] == b"SpA1":
                     return decode_sprite(data)
 
         return None
@@ -430,7 +429,6 @@ class SpriteResolver:
         (uniquering/uniqueamulet/uniqueweapon/uniquearmor/uniquecharm).
         Only used when the caller did not provide ``unique_sprite_map``.
         """
-        from d2rr_toolkit.adapters.casc.sprites import decode_sprite
 
         fname = _snake_case(unique_name)
         if not fname:
@@ -454,6 +452,7 @@ class SpriteResolver:
                 ("misc", "uniquecharm"),
             ]
 
+        data: bytes | None
         if self._mod_hd_dir:
             for cat, sub in categories:
                 sprite_path = self._mod_hd_dir / cat / sub / f"{fname}.sprite"
@@ -469,7 +468,7 @@ class SpriteResolver:
             for cat, sub in categories:
                 casc_path = f"data:data/hd/global/ui/items/{cat}/{sub}/{fname}.sprite"
                 data = self._casc.read_file(casc_path)
-                if data and data[:4] == b"SpA1":
+                if data is not None and data[:4] == b"SpA1":
                     return decode_sprite(data)
 
         return None
@@ -479,7 +478,6 @@ class SpriteResolver:
         if not invfile or self._mod_dc6_dir is None:
             return None
 
-        from d2rr_toolkit.adapters.casc.sprites import decode_dc6
 
         dc6_path = self._mod_dc6_dir / f"{invfile}.dc6"
         if not dc6_path.exists():

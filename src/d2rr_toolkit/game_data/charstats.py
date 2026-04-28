@@ -23,16 +23,16 @@ separator that D2 uses between classic and expansion classes):
  never cached as hardcoded constants]
 """
 
-from __future__ import annotations
-
 import csv
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from d2rr_toolkit.meta.source_versions import SourceVersions
+from d2rr_toolkit.adapters.casc import read_game_data_rows
+from d2rr_toolkit.meta import cached_load
 
 
 # Note: CLASS_NAMES in constants.py is kept for backward compatibility
@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(slots=True)
 class ClassDefinition:
     """Base statistics for one character class from charstats.txt."""
 
@@ -99,7 +99,7 @@ class CharStatsDatabase:
         self._classes = {}
         class_id = 0
 
-        def _int(row: dict, key: str) -> int:
+        def _int(row: dict[str, Any], key: str) -> int:
             try:
                 return int(row.get(key, "0") or "0")
             except ValueError:
@@ -231,11 +231,9 @@ def load_charstats(
             rely on the platformdirs default
             (``%LOCALAPPDATA%/d2rr-toolkit/data_cache`` on Windows).
     """
-    from d2rr_toolkit.meta import cached_load
 
     def _build() -> None:
         """Populate the :class:`CharStatsDatabase` via the Iron Rule."""
-        from d2rr_toolkit.adapters.casc import read_game_data_rows
 
         casc_path = "data:data/global/excel/charstats.txt"
         rows = read_game_data_rows(casc_path)

@@ -20,11 +20,8 @@ Usage::
     rollback(save_path, backup_path)
 """
 
-from __future__ import annotations
-
 import logging
 import os
-import shutil
 import stat
 from datetime import datetime
 from pathlib import Path
@@ -49,7 +46,7 @@ def _backup_dir(save_path: Path) -> Path:
     backup_dir.mkdir(parents=True, exist_ok=True)
 
     # TOCTOU hardening (CWE-367): between mkdir returning and the
-    # subsequent shutil.copy2 call, an attacker with write access to
+    # subsequent Path.copy call, an attacker with write access to
     # BACKUP_ROOT could replace backup_dir with a symlink to an
     # attacker-controlled location. Lstat the path (no symlink follow)
     # and refuse to proceed unless it's a real directory owned by us.
@@ -61,7 +58,9 @@ def _backup_dir(save_path: Path) -> Path:
         raise RuntimeError(
             f"Backup path exists but is not a real directory (possibly a symlink): {backup_dir}"
         )
-    if os.name != "nt" and st.st_uid != os.getuid():
+    # os.getuid() is POSIX-only; mypy on a stub-platform doesn't see it.
+    # The os.name guard makes sure this branch never runs on Windows.
+    if os.name != "nt" and st.st_uid != os.getuid():  # type: ignore[attr-defined]
         raise RuntimeError(
             f"Backup path owned by another uid ({st.st_uid}); refusing "
             f"to write backups into {backup_dir}."
@@ -96,7 +95,7 @@ def create_backup(save_path: Path) -> Path:
     backup_name = f"{save_path.stem}.{timestamp}{save_path.suffix}.bak"
     backup_path = backup_dir / backup_name
 
-    shutil.copy2(save_path, backup_path)
+    save_path.copy(backup_path, preserve_metadata=True)
     logger.info("Backup created: %s", backup_path)
     return backup_path
 
@@ -134,7 +133,7 @@ def rollback(save_path: Path, backup_path: Path) -> None:
     if not backup_path.exists():
         raise FileNotFoundError(f"Backup not found: {backup_path}")
 
-    shutil.copy2(backup_path, save_path)
+    backup_path.copy(save_path, preserve_metadata=True)
     logger.info("Rollback complete: %s restored from %s", save_path, backup_path)
 
 

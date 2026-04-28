@@ -38,8 +38,6 @@ Item fidelity:
   for restore operations.
 """
 
-from __future__ import annotations
-
 import logging
 import struct
 from dataclasses import dataclass, field
@@ -57,7 +55,7 @@ _D2I_HEADER_SIZE = 64  # header is always 64 bytes (0x40)
 _JM_MARKER = b"JM"
 
 
-@dataclass
+@dataclass(slots=True)
 class SharedStashTab:
     """One tab of the shared stash.
 
@@ -92,7 +90,7 @@ class SharedStashTab:
     gold: int = 0  # per-tab gold (u32 LE at page header offset 0x0C). [BV]
 
 
-@dataclass
+@dataclass(slots=True)
 class ParsedSharedStash:
     """Complete parsed shared stash from a .d2i file."""
 

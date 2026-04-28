@@ -6,8 +6,6 @@ extract / restore / list / backups / rollback commands. Shares
 ``_cli_mode_to_game_mode`` helpers with :mod:`d2rr_toolkit.cli._stash`.
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import typer
@@ -22,6 +20,7 @@ from d2rr_toolkit.database.modes import (
     mode_from_character,
     mode_from_stash_filename,
 )
+from d2rr_toolkit.display.colors import get_title_color
 from d2rr_toolkit.models.character import ParsedCharacter
 
 from . import app, console, err_console
@@ -88,7 +87,6 @@ def _resolve_db_path(
     invoke a command without ``--db`` on a system where
     ``D2RR_SAVE_DIR`` is not set and no Windows heuristic applies.
     """
-    from d2rr_toolkit.exceptions import ConfigurationError
 
     if db_path_override is not None:
         return db_path_override
@@ -101,10 +99,22 @@ def _resolve_db_path(
 
 #: Typer annotation for the shared ``--mode`` flag. Wrapped in an Enum to
 #: get tab-completion and proper validation error messages.
-import enum as _enum  # deferred: only used in CLI option declarations
+from enum import StrEnum  # deferred: only used in CLI option declarations
+from d2rr_toolkit.archive import (
+    ArchiveError,
+    extract_from_d2i,
+    restore_to_d2i,
+)
+from d2rr_toolkit.backup import (
+    BACKUP_ROOT,
+    list_backups,
+    rollback,
+)
+from d2rr_toolkit.database.item_db import open_item_db
+from d2rr_toolkit.exceptions import ConfigurationError
 
 
-class _CliMode(str, _enum.Enum):
+class _CliMode(StrEnum):
     """CLI-facing enum wrapper around the ``GameMode`` literal."""
 
     softcore = "softcore"
@@ -115,7 +125,7 @@ def _cli_mode_to_game_mode(mode: _CliMode | None) -> GameMode | None:
     """Convert the CLI enum to the toolkit literal, or ``None``."""
     if mode is None:
         return None
-    return mode.value  # type: ignore[return-value]
+    return mode.value
 
 
 @archive_app.command("extract")
@@ -146,8 +156,6 @@ def archive_extract(
     """
     _load_game_data(save_file)
 
-    from d2rr_toolkit.database.item_db import open_item_db
-    from d2rr_toolkit.archive import extract_from_d2i, ArchiveError
 
     try:
         game_mode = _resolve_game_mode(
@@ -201,8 +209,6 @@ def archive_restore(
     """
     _load_game_data(save_file)
 
-    from d2rr_toolkit.database.item_db import open_item_db
-    from d2rr_toolkit.archive import restore_to_d2i, ArchiveError
 
     try:
         game_mode = _resolve_game_mode(
@@ -255,9 +261,8 @@ def archive_list(
         d2rr-toolkit archive list --search "Blade"
         d2rr-toolkit archive list --quality 7
     """
-    from d2rr_toolkit.database.item_db import open_item_db
 
-    game_mode: GameMode = mode.value  # type: ignore[assignment]
+    game_mode: GameMode = mode.value
     resolved_path = _resolve_db_path(game_mode, db_path_override=db_path)
 
     if not resolved_path.exists():
@@ -319,7 +324,6 @@ def archive_backups(
     Example:
         d2rr-toolkit archive backups stash.d2i
     """
-    from d2rr_toolkit.backup import list_backups
 
     backups = list_backups(save_file)
     if not backups:
@@ -341,9 +345,8 @@ def archive_rollback(
     Example:
         d2rr-toolkit archive rollback stash.d2i stash.20260331_120000.d2i.bak
     """
-    from d2rr_toolkit.backup import rollback, BACKUP_DIR_NAME
 
-    backup_path = save_file.parent / BACKUP_DIR_NAME / backup_name
+    backup_path = BACKUP_ROOT / save_file.name / backup_name
     if not backup_path.exists():
         err_console.print(f"Backup not found: {backup_path}")
         raise typer.Exit(1)

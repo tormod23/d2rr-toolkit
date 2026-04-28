@@ -18,7 +18,7 @@ until the space character (terminator) is decoded.
 Item codes are typically 3-4 characters (e.g. 'hp1', 'stu', 'r01', 'lgl').
 """
 
-from __future__ import annotations
+from dataclasses import dataclass, field
 
 from d2rr_toolkit.constants import HUFFMAN_TABLE
 from d2rr_toolkit.exceptions import HuffmanDecodeError
@@ -28,14 +28,12 @@ from d2rr_toolkit.parsers.bit_reader import BitReader
 # ── Huffman Tree Node ────────────────────────────────────────
 
 
+@dataclass(slots=True)
 class _HuffmanNode:
     """Internal node or leaf in the Huffman decoding tree."""
 
-    __slots__ = ("children", "character")
-
-    def __init__(self) -> None:
-        self.children: dict[int, "_HuffmanNode"] = {}
-        self.character: str | None = None
+    children: dict[int, _HuffmanNode] = field(default_factory=dict)
+    character: str | None = None
 
     @property
     def is_leaf(self) -> bool:

@@ -34,8 +34,6 @@ process start via :func:`load_corruption_rolls`.  The data is tiny
 (168 rows total) and the cache helper makes warm loads free.
 """
 
-from __future__ import annotations
-
 import logging
 from dataclasses import dataclass
 from pathlib import Path
@@ -43,6 +41,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from d2rr_toolkit.meta.source_versions import SourceVersions
+from d2rr_toolkit.adapters.casc import read_game_data_rows
+from d2rr_toolkit.meta import cached_load
 
 logger = logging.getLogger(__name__)
 
@@ -317,10 +317,8 @@ def load_corruption_rolls(
     :mod:`d2rr_toolkit.meta.cache` on subsequent calls; the disabled
     flag honours ``D2RR_DISABLE_GAME_DATA_CACHE=1`` as well.
     """
-    from d2rr_toolkit.meta import cached_load
 
     def _build() -> None:
-        from d2rr_toolkit.adapters.casc import read_game_data_rows
 
         rows = read_game_data_rows("data:data/global/excel/cubemain.txt")
         if not rows:

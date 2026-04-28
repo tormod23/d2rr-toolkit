@@ -7,8 +7,6 @@ content) and content sizes.
 Reference: CascLib by Ladislav Zezula - CascRootFile_Text.cpp
 """
 
-from __future__ import annotations
-
 import logging
 
 logger = logging.getLogger(__name__)

@@ -29,8 +29,6 @@ Only items with ``location_id == 0`` (stored/in-panel) are counted as
 occupying grid cells. Equipped, belt, and socket items are skipped.
 """
 
-from __future__ import annotations
-
 from typing import Iterable, Protocol
 
 from d2rr_toolkit.models.character import ParsedItem

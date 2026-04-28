@@ -30,14 +30,13 @@ The helpers are pure string/metadata logic with no I/O, so they are
 cheap to use everywhere.
 """
 
-from __future__ import annotations
-
 import sqlite3
 from pathlib import Path
 from typing import Literal, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from d2rr_toolkit.models.character import ParsedCharacter
+from d2rr_toolkit.config import resolve_save_dir
 
 __all__ = [
     "GameMode",
@@ -60,7 +59,7 @@ __all__ = [
 #: and removes the need to import a symbol everywhere - but the two
 #: module-level constants below are still available for code that prefers
 #: named references.
-GameMode = Literal["softcore", "hardcore"]
+type GameMode = Literal["softcore", "hardcore"]
 
 SOFTCORE: GameMode = "softcore"
 HARDCORE: GameMode = "hardcore"
@@ -202,7 +201,6 @@ def default_archive_db_path(
             ``base_dir`` explicitly, or supply ``--db`` on the CLI.
     """
     if base_dir is None:
-        from d2rr_toolkit.config import resolve_save_dir
 
         base_dir = resolve_save_dir()
     return base_dir / default_archive_db_name(mode)
@@ -270,7 +268,7 @@ def bind_database_mode(
         conn.commit()
         return expected
     # sqlite3.Row is subscriptable; plain tuple row falls back to index 0.
-    stored = row["value"] if hasattr(row, "keys") else row[0]
+    stored: str = row["value"] if hasattr(row, "keys") else row[0]
     if stored != expected:
         where = f" at {db_path}" if db_path else ""
         raise DatabaseModeMismatchError(
@@ -278,4 +276,8 @@ def bind_database_mode(
             f"as {expected!r}. SoftCore and HardCore items must never "
             "share a database."
         )
-    return stored  # type: ignore[return-value]
+    # ``stored`` is one of "softcore" / "hardcore" by construction; the
+    # equality check above narrows it to ``GameMode`` semantically.
+    if stored == "softcore":
+        return SOFTCORE
+    return HARDCORE

@@ -26,8 +26,6 @@ gfx variant -> base invfile), so a consumer can parse a key back into
 the exact sequence of sprite lookups to attempt.
 """
 
-from __future__ import annotations
-
 from d2rr_toolkit.models.character import ParsedItem
 
 __all__ = ["sprite_key_for_item"]

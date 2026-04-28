@@ -9,21 +9,27 @@ gui/server.py that previously caused bugs when fixes were applied to only
 one side (e.g. runeword merge, gem socket bonuses, func=5/6/7 handling).
 """
 
-from __future__ import annotations
-
 import math
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from d2rr_toolkit.game_data.item_names import ItemNamesDatabase
+    from d2rr_toolkit.game_data.item_stat_cost import ItemStatCostDatabase
+    from d2rr_toolkit.game_data.item_types import ItemTypeDatabase
+    from d2rr_toolkit.game_data.sets import SetsDatabase
     from d2rr_toolkit.models.character import ParsedItem
+from d2rr_toolkit.game_data.gems import get_gems_db
+from d2rr_toolkit.game_data.item_types import ItemCategory
+from d2rr_toolkit.game_data.properties import get_properties_db
 
 
 # ─── Return Types ─────────────────────────────────────────────────────────────
 
 
-@dataclass
+@dataclass(slots=True)
 class DamageLine:
     """One line of weapon damage display."""
 
@@ -33,7 +39,7 @@ class DamageLine:
     has_bonus: bool  # True if ED% or flat damage modifies the base
 
 
-@dataclass
+@dataclass(slots=True)
 class DefenseResult:
     """Computed defense value for armor items."""
 
@@ -44,7 +50,7 @@ class DefenseResult:
     durability_max: int
 
 
-@dataclass
+@dataclass(slots=True)
 class RequirementsResult:
     """Computed item requirements."""
 
@@ -53,7 +59,7 @@ class RequirementsResult:
     level: int = 0  # 0 or 1 = don't display
 
 
-@dataclass
+@dataclass(slots=True)
 class SocketPosition:
     """Position of one socket overlay on an item sprite, in cell units."""
 
@@ -220,12 +226,11 @@ def get_socket_positions(
 # ─── Tier & Name ──────────────────────────────────────────────────────────────
 
 
-def get_tier_suffix(item_code: str, type_db) -> str:
+def get_tier_suffix(item_code: str, type_db: "ItemTypeDatabase") -> str:
     """Return the tier display suffix: ' [N]', ' [X]', or ' [E]'.
 
     Only armor and weapons have tiers. Returns '' for misc items.
     """
-    from d2rr_toolkit.game_data.item_types import ItemCategory
 
     cat = type_db.classify(item_code)
     if cat not in (ItemCategory.ARMOR, ItemCategory.WEAPON):
@@ -234,7 +239,7 @@ def get_tier_suffix(item_code: str, type_db) -> str:
     return {"elite": " [E]", "exceptional": " [X]"}.get(tier, " [N]")
 
 
-def get_rune_letter(rune_code: str, names_db) -> str:
+def get_rune_letter(rune_code: str, names_db: "ItemNamesDatabase") -> str:
     """Return the rune letter for a rune item code (e.g. 'r24' -> 'Ist').
 
     Strips ' Rune (...)' suffix and any trailing junk from strings.json.
@@ -250,7 +255,7 @@ def get_rune_letter(rune_code: str, names_db) -> str:
     return rune_code
 
 
-def get_rune_formula(rune_codes: list[str], names_db) -> str:
+def get_rune_formula(rune_codes: list[str], names_db: "ItemNamesDatabase") -> str:
     """Build the rune formula string (e.g. 'AmnRalMalIstOhm')."""
     return "".join(get_rune_letter(rc, names_db) for rc in rune_codes)
 
@@ -295,9 +300,9 @@ _RW_HIDDEN_STATS = frozenset({387})
 def merge_runeword_properties(
     item: ParsedItem,
     children: list[ParsedItem] | None,
-    type_db,
-    isc_db,
-) -> list[dict]:
+    type_db: "ItemTypeDatabase",
+    isc_db: "ItemStatCostDatabase",
+) -> list[dict[str, Any]]:
     """Merge all property sources for a runeword item.
 
     Sources (in order):
@@ -313,9 +318,9 @@ def merge_runeword_properties(
     - func=6: flat max damage -> stat 22
     - func=7: enhanced damage% -> stat 17 + 18
     """
-    merged: dict[tuple[int, int], dict] = {}
+    merged: dict[tuple[int, int], dict[str, Any]] = {}
 
-    def _merge_prop(p: dict) -> None:
+    def _merge_prop(p: dict[str, Any]) -> None:
         sid = p.get("stat_id")
         if sid is None or sid in _RW_HIDDEN_STATS:
             return
@@ -339,9 +344,9 @@ def merge_runeword_properties(
 def _merge_gem_socket_bonuses(
     item: ParsedItem,
     children: list[ParsedItem] | None,
-    type_db,
-    isc_db,
-    merge_fn,
+    type_db: "ItemTypeDatabase",
+    isc_db: "ItemStatCostDatabase",
+    merge_fn: Callable[[dict[str, Any]], None],
 ) -> None:
     """Compute and merge gem/rune socket bonuses from gems.txt.
 
@@ -349,9 +354,6 @@ def _merge_gem_socket_bonuses(
     determines the appropriate slot type (weapon/helm/shield), and converts
     property codes to stat values via properties.txt.
     """
-    from d2rr_toolkit.game_data.gems import get_gems_db
-    from d2rr_toolkit.game_data.properties import get_properties_db
-    from d2rr_toolkit.game_data.item_types import ItemCategory
 
     gems_db = get_gems_db()
     props_db = get_properties_db()
@@ -376,26 +378,28 @@ def _merge_gem_socket_bonuses(
             for slot in prop_def.slots:
                 if not slot.stat_name:
                     # Special func codes with empty stat_name
-                    if slot.func == 5:
-                        merge_fn({"stat_id": 21, "value": mod.min_val, "param": 0})
-                    elif slot.func == 6:
-                        merge_fn({"stat_id": 22, "value": mod.max_val, "param": 0})
-                    elif slot.func == 7:
-                        merge_fn({"stat_id": 17, "value": mod.min_val, "param": 0})
-                        merge_fn({"stat_id": 18, "value": mod.min_val, "param": 0})
+                    match slot.func:
+                        case 5:
+                            merge_fn({"stat_id": 21, "value": mod.min_val, "param": 0})
+                        case 6:
+                            merge_fn({"stat_id": 22, "value": mod.max_val, "param": 0})
+                        case 7:
+                            merge_fn({"stat_id": 17, "value": mod.min_val, "param": 0})
+                            merge_fn({"stat_id": 18, "value": mod.min_val, "param": 0})
                     continue
                 sd = isc_db.get_by_name(slot.stat_name)
                 if sd is None:
                     continue
-                if slot.func == 16:
-                    val = mod.max_val
-                elif slot.func == 17:
-                    try:
-                        val = int(mod.param) if mod.param else mod.min_val
-                    except ValueError:
+                match slot.func:
+                    case 16:
+                        val = mod.max_val
+                    case 17:
+                        try:
+                            val = int(mod.param) if mod.param else mod.min_val
+                        except ValueError:
+                            val = mod.min_val
+                    case _:
                         val = mod.min_val
-                else:
-                    val = mod.min_val
                 merge_fn({"stat_id": sd.stat_id, "value": val, "param": 0})
 
 
@@ -404,8 +408,8 @@ def _merge_gem_socket_bonuses(
 
 def calculate_weapon_damage(
     item: ParsedItem,
-    all_props: list[dict],
-    type_db,
+    all_props: list[dict[str, Any]],
+    type_db: "ItemTypeDatabase",
 ) -> list[DamageLine]:
     """Calculate final weapon damage lines including ED% and flat bonuses.
 
@@ -419,7 +423,6 @@ def calculate_weapon_damage(
     Returns:
         List of DamageLine (0-2 entries: Two-Hand and/or One-Hand).
     """
-    from d2rr_toolkit.game_data.item_types import ItemCategory
 
     if type_db.classify(item.item_code) != ItemCategory.WEAPON:
         return []
@@ -475,8 +478,8 @@ def calculate_weapon_damage(
 
 def calculate_defense(
     item: ParsedItem,
-    all_props: list[dict],
-    type_db,
+    all_props: list[dict[str, Any]],
+    type_db: "ItemTypeDatabase",
 ) -> DefenseResult | None:
     """Calculate final defense for armor items.
 
@@ -484,7 +487,6 @@ def calculate_defense(
 
     Returns None for non-armor items or items without armor_data.
     """
-    from d2rr_toolkit.game_data.item_types import ItemCategory
 
     if type_db.classify(item.item_code) != ItemCategory.ARMOR:
         return None
@@ -520,10 +522,10 @@ def calculate_defense(
 def calculate_requirements(
     item: ParsedItem,
     children: list[ParsedItem] | None,
-    type_db,
-    names_db=None,
-    isc_db=None,
-    sets_db=None,
+    type_db: "ItemTypeDatabase",
+    names_db: "ItemNamesDatabase | None" = None,
+    isc_db: "ItemStatCostDatabase | None" = None,
+    sets_db: "SetsDatabase | None" = None,
 ) -> RequirementsResult:
     """Calculate effective item requirements (Str, Dex, Level).
 
@@ -614,9 +616,9 @@ def calculate_requirements(
 def merge_all_properties(
     item: ParsedItem,
     children: list[ParsedItem] | None,
-    type_db,
-    isc_db,
-) -> list[dict]:
+    type_db: "ItemTypeDatabase",
+    isc_db: "ItemStatCostDatabase",
+) -> list[dict[str, Any]]:
     """Merge all properties for display - handles runeword vs non-runeword items.
 
     For runeword items: merges magical + runeword + gem socket bonuses with
@@ -640,32 +642,33 @@ def merge_all_properties(
         #   3x "100% Chance to cast level 37 Blizzard" -> "300% Chance..."
         #   3x "Adds 24-38 Cold Damage" -> "Adds 72-114 Cold Damage"
         if children:
-            child_agg: dict[tuple, dict] = {}
+            child_agg: dict[tuple[Any, ...], dict[str, Any]] = {}
             for child in children:
                 for p in child.magical_properties or []:
                     sid = p.get("stat_id")
                     if sid is None:
                         continue
+                    agg_key: tuple[Any, ...]
                     if "chance" in p:
                         # Encode 2 (skill-on-event): key by (stat_id, skill_id, level)
-                        key = (sid, p.get("skill_id", 0), p.get("level", 0))
-                        if key in child_agg:
-                            child_agg[key]["chance"] += p["chance"]
+                        agg_key = (sid, p.get("skill_id", 0), p.get("level", 0))
+                        if agg_key in child_agg:
+                            child_agg[agg_key]["chance"] += p["chance"]
                         else:
-                            child_agg[key] = dict(p)
+                            child_agg[agg_key] = dict(p)
                     elif "charges" in p:
                         # Encode 3 (charged skill): never aggregate, each is unique
-                        ukey = (sid, p.get("skill_id", 0), id(p))
-                        child_agg[ukey] = dict(p)
+                        agg_key = (sid, p.get("skill_id", 0), id(p))
+                        child_agg[agg_key] = dict(p)
                     else:
                         # Standard stat: key by (stat_id, param)
-                        key = (sid, p.get("param", 0))
-                        if key in child_agg:
-                            child_agg[key]["value"] = child_agg[key].get("value", 0) + p.get(
+                        agg_key = (sid, p.get("param", 0))
+                        if agg_key in child_agg:
+                            child_agg[agg_key]["value"] = child_agg[agg_key].get(
                                 "value", 0
-                            )
+                            ) + p.get("value", 0)
                         else:
-                            child_agg[key] = dict(p)
+                            child_agg[agg_key] = dict(p)
             all_props.extend(child_agg.values())
         # For socketed non-runeword items: also merge gem/rune bonuses from
         # gems.txt. This handles cases like 4x Vex in a Set armor that give
@@ -674,9 +677,9 @@ def merge_all_properties(
         # maxfireresist = one entry with +20).
         if item.flags.socketed and children:
             # Collect gem/rune bonuses from gems.txt, summing identical stats
-            gem_merged: dict[tuple[int, int], dict] = {}
+            gem_merged: dict[tuple[int, int], dict[str, Any]] = {}
 
-            def _merge_gem_prop(p: dict) -> None:
+            def _merge_gem_prop(p: dict[str, Any]) -> None:
                 sid = p.get("stat_id")
                 if sid is None:
                     return

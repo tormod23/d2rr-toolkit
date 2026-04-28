@@ -4,6 +4,8 @@ Every exception carries enough context to understand exactly what went wrong
 and at which byte/bit offset -- critical for debugging binary format issues.
 """
 
+from typing import override
+
 
 class ToolkitError(Exception):
     """Base exception for all D2RR Toolkit errors."""
@@ -42,6 +44,7 @@ class UnsupportedVersionError(ToolkitError):
     The parser only fully supports version 105 (D2R Reimagined).
     """
 
+    @override
     def __init__(self, found_version: int, supported_versions: tuple[int, ...]) -> None:
         self.found_version = found_version
         self.supported_versions = supported_versions
@@ -58,6 +61,7 @@ class InvalidSignatureError(ToolkitError):
     [BV] Expected signature: 0xAA55AA55
     """
 
+    @override
     def __init__(self, found: int) -> None:
         self.found = found
         super().__init__(
@@ -81,6 +85,7 @@ class SpecVerificationError(ToolkitError):
     4. Tag the finding as [BV]
     """
 
+    @override
     def __init__(
         self,
         field: str,
@@ -109,6 +114,7 @@ class SpecVerificationError(ToolkitError):
 class BitReaderError(ToolkitError):
     """Raised when the BitReader encounters an unrecoverable error."""
 
+    @override
     def __init__(self, message: str, bit_position: int) -> None:
         self.bit_position = bit_position
         super().__init__(
@@ -122,6 +128,7 @@ class HuffmanDecodeError(ToolkitError):
     [BV] Huffman decoding starts at item-relative bit 53.
     """
 
+    @override
     def __init__(self, bit_position: int, bits_consumed: int) -> None:
         self.bit_position = bit_position
         self.bits_consumed = bits_consumed

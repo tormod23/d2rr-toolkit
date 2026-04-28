@@ -47,14 +47,13 @@ to `D2IWriter`.
 [BV]
 """
 
-from __future__ import annotations
-
 import logging
 import random
 import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from typing import Self
 
 from d2rr_toolkit.database.modes import (
     GameMode,
@@ -69,6 +68,7 @@ from d2rr_toolkit.writers.item_utils import (
     SECTION5_MIN_QUANTITY,
     clone_with_quantity,
 )
+from d2rr_toolkit.models.character import ItemFlags
 
 logger = logging.getLogger(__name__)
 
@@ -177,7 +177,7 @@ VALUES (1, 0, datetime('now'));
 # ─────────────────────────────────────────────────────────────────────────
 
 
-@dataclass
+@dataclass(slots=True)
 class StackRow:
     """A stored non-gem stack entry."""
 
@@ -193,7 +193,7 @@ class StackRow:
     flags_simple: bool
 
 
-@dataclass
+@dataclass(slots=True)
 class GemTemplate:
     """A stored gem template (no per-type counter - the pool is shared)."""
 
@@ -269,7 +269,6 @@ def _rehydrate_template(
     re-read. We use `model_construct` to bypass Pydantic validation for
     the cosmetic fields we don't care about here.
     """
-    from d2rr_toolkit.models.character import ItemFlags
 
     flags = ItemFlags.model_construct(
         identified=True,
@@ -352,7 +351,7 @@ class Section5Database:
         """Close the underlying SQLite connection."""
         self._conn.close()
 
-    def __enter__(self) -> "Section5Database":
+    def __enter__(self) -> Self:
         """Support ``with Section5Database(...) as db:`` usage."""
         return self
 

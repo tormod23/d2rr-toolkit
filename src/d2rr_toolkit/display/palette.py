@@ -28,8 +28,6 @@ Usage::
     rgb       = palette.color(new_index)
 """
 
-from __future__ import annotations
-
 import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -63,7 +61,7 @@ _COLORMAP_FILES: dict[int, str] = {
 # ── Data classes ────────────────────────────────────────────────────────────
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Palette:
     """256-color palette in RGB order (0..255 per channel).
 
@@ -82,7 +80,7 @@ class Palette:
         return (self.rgb[i], self.rgb[i + 1], self.rgb[i + 2])
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ColorMap:
     """21 * 256 lookup tables for one colormap file.
 

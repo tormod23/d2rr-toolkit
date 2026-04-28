@@ -41,24 +41,25 @@ source rows (unique OR set, plus 1 runeword, plus <=3 prefixes, plus
 <=3 suffixes).  No file I/O; everything is pre-indexed at load time.
 """
 
-from __future__ import annotations
-
 import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterable
 
+from d2rr_toolkit.game_data._roll_types import (
+    ItemRollContext,
+    RollSource,
+    StatRollRange,
+)
+
 if TYPE_CHECKING:
     from d2rr_toolkit.game_data.charstats import CharStatsDatabase
     from d2rr_toolkit.game_data.item_stat_cost import ItemStatCostDatabase
     from d2rr_toolkit.game_data.properties import PropertiesDatabase
-    from d2rr_toolkit.game_data.property_formatter import (
-        ItemRollContext,
-        RollSource,
-        StatRollRange,
-    )
     from d2rr_toolkit.game_data.skills import SkillDatabase
     from d2rr_toolkit.meta.source_versions import SourceVersions
+from d2rr_toolkit.adapters.casc import read_game_data_rows
+from d2rr_toolkit.meta import cached_load
 
 logger = logging.getLogger(__name__)
 
@@ -312,8 +313,6 @@ class AffixRollDatabase:
         tests), the first non-None source wins in priority order
         Unique -> Set -> Runeword -> Magic prefix -> Magic suffix.
         """
-        from d2rr_toolkit.game_data.property_formatter import StatRollRange
-
         # Compound-encoded stats (encode=2 skill-event, encode=3
         # skill-charges) pack multiple semantic fields (chance, level,
         # skill id, ...) into one binary value.  The source row's
@@ -347,6 +346,9 @@ class AffixRollDatabase:
                         aggregate_min = slot.min_value
                         aggregate_max = slot.max_value
                     else:
+                        # ``aggregate_max`` is set in lockstep with
+                        # ``aggregate_min`` above; both move together.
+                        assert aggregate_max is not None
                         aggregate_min += slot.min_value
                         aggregate_max += slot.max_value
             if aggregate_min is not None and aggregate_max is not None:
@@ -563,7 +565,7 @@ class AffixRollDatabase:
                 # Value is a frame count (25 frames = 1 second).
                 try:
                     val = float(slot.par)
-                except (TypeError, ValueError):
+                except TypeError, ValueError:
                     val = 0.0
                 return SlotContribution(
                     source=source,
@@ -1001,10 +1003,8 @@ def load_affix_rolls(
         source_versions: Optional :class:`SourceVersions`.
         cache_dir: Optional cache root override.
     """
-    from d2rr_toolkit.meta import cached_load
 
     def _build() -> None:
-        from d2rr_toolkit.adapters.casc import read_game_data_rows
 
         u_rows = read_game_data_rows("data:data/global/excel/uniqueitems.txt")
         s_rows = read_game_data_rows("data:data/global/excel/setitems.txt")

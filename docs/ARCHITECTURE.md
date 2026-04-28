@@ -174,3 +174,20 @@ land a matching fixture + entry in `VERIFICATION_LOG.md`.
 - Every file that touches game-data files on disk goes through
   `adapters/casc` - no direct `open(.../reimagined/...)` calls
   anywhere else.
+- **No lazy imports** inside function or method bodies. Every
+  internal `import d2rr_toolkit.X` / `from d2rr_toolkit.X import Y`
+  must live at module top. Lazy imports historically masked real
+  cycles (`affix_rolls / property_formatter / stat_breakdown` -
+  resolved 2026-04 via the `_roll_types` leaf module + a
+  registration hook on `property_formatter` that
+  `stat_breakdown` installs at its own load time).
+  `TYPE_CHECKING`-gated imports remain the only exception (they
+  exist for type checkers and never run at runtime).
+- **No cyclic imports** at top-level. The runtime import graph
+  must be a DAG. The first four contracts above (enforced by
+  `import-linter`) cover specific layer boundaries; the global
+  acyclicity invariant is enforced by
+  [`tests/test_no_lazy_imports_or_cycles.py`](../tests/test_no_lazy_imports_or_cycles.py)
+  via Tarjan's SCC algorithm. Both rules ride on the standard
+  pytest run, so a regression fails CI the same way a unit test
+  would.

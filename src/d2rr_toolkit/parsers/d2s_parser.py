@@ -13,8 +13,6 @@ Public API:
 Binary format details: see docs/spec/d2s_format_spec.md
 """
 
-from __future__ import annotations
-
 import logging
 import struct
 from pathlib import Path
@@ -122,10 +120,6 @@ def _auto_load_game_data() -> None:
     wrong ``unique_type_id`` values for any unique whose binary index
     sits past one of the Reimagined separator rows).
     """
-    from d2rr_toolkit.game_data.charstats import load_charstats
-    from d2rr_toolkit.game_data.item_names import get_item_names_db, load_item_names
-    from d2rr_toolkit.game_data.item_types import load_item_types
-    from d2rr_toolkit.game_data.skills import load_skills
 
     if not get_item_type_db().is_loaded():
         load_item_types()
@@ -175,6 +169,13 @@ from d2rr_toolkit.parsers.d2s_parser_header import HeaderParserMixin  # noqa: E4
 from d2rr_toolkit.parsers.d2s_parser_items import ItemsParserMixin  # noqa: E402
 from d2rr_toolkit.parsers.d2s_parser_merc import MercenaryParserMixin  # noqa: E402
 from d2rr_toolkit.parsers.d2s_parser_stats import StatsSkillsParserMixin  # noqa: E402
+from d2rr_toolkit.game_data.charstats import load_charstats
+from d2rr_toolkit.game_data.item_names import (
+    get_item_names_db,
+    load_item_names,
+)
+from d2rr_toolkit.game_data.item_types import load_item_types
+from d2rr_toolkit.game_data.skills import load_skills
 
 
 class D2SParser(
@@ -554,9 +555,8 @@ def parse_character_header(path: "Path | str") -> CharacterHeader:
         UnsupportedVersionError:   File version not supported.
         SpecVerificationError:     Stats marker 'gf' not found at 0x341.
     """
-    from pathlib import Path as _Path
 
-    p = _Path(path)
+    p = Path(path)
 
     # Only read the header bytes -- nothing more.
     with open(p, "rb") as f:
@@ -602,9 +602,8 @@ def parse_character_headers(
             mode = "HC" if h.is_hardcore else "SC"
             print(f"{h.character_name:20s} Lvl {h.level:3d} {h.character_class_name:12s} {mode} {mark}")
     """
-    from pathlib import Path as _Path
 
-    d = _Path(save_dir)
+    d = Path(save_dir)
     if not d.is_dir():
         raise NotADirectoryError(f"Not a directory: {d}")
 
@@ -620,10 +619,11 @@ def parse_character_headers(
             if skip_errors:
                 logger.warning("Skipping %s: %s", f.name, e)
                 continue
-            # Wrap to include file path while preserving original cause.
-            # We cannot reconstruct custom exceptions (e.g. InvalidSignatureError)
-            # with a new message because their __init__ has a different signature.
-            raise RuntimeError(f"Failed to parse {f}: {e}") from e
+            # Attach the file path as a PEP 678 note so the original
+            # exception type (InvalidSignatureError, UnsupportedVersionError,
+            # ...) is preserved for catch-by-type at the call site.
+            e.add_note(f"while parsing {f}")
+            raise
 
     logger.info("Parsed %d character header(s) from %s", len(results), d)
     return results

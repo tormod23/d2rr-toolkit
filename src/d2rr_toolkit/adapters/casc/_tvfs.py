@@ -10,8 +10,6 @@ files contain the actual path -> CKey mappings.
 Reference: CascLib by Ladislav Zezula - CascRootFile_TVFS.cpp
 """
 
-from __future__ import annotations
-
 import logging
 from typing import Callable
 

@@ -34,8 +34,6 @@ Usage::
     png = sprites.get(key)  # bytes | None
 """
 
-from __future__ import annotations
-
 import csv
 import io
 import logging
@@ -49,6 +47,17 @@ if TYPE_CHECKING:
     from d2rr_toolkit.config import GamePaths
     from d2rr_toolkit.adapters.casc.reader import CASCReader
     from d2rr_toolkit.game_data.item_names import ItemNamesDatabase
+import json
+from PIL import Image
+from d2rr_toolkit.game_data.item_names import (
+    get_item_names_db,
+    load_item_names,
+)
+from d2rr_toolkit.game_data.item_types import (
+    get_item_type_db,
+    load_item_types,
+)
+from d2rr_toolkit.game_data.sets import load_sets
 
 
 # ── Private helpers extracted from load_all_item_sprites ────────────────────
@@ -78,10 +87,6 @@ def _decode_spa1_fast(data: bytes) -> bytes | None:
         SpA1 blob or decoding fails for any reason.
     """
     if not data or len(data) < 40 or data[:4] != b"SpA1":
-        return None
-    try:
-        from PIL import Image
-    except ImportError:
         return None
     try:
         width = struct.unpack_from("<I", data, 8)[0]
@@ -214,6 +219,7 @@ class _SpriteResolver:
             return self._cache[key]
 
         png: bytes | None = None
+        data: bytes | None
         mod_path = self._mod.get(key)
         if mod_path is not None:
             try:
@@ -332,7 +338,6 @@ def load_items_json(path: Path) -> dict[str, str]:
         Flat dict mapping item_code -> asset_path.
         Empty dict if the file does not exist.
     """
-    import json
 
     if not path.exists():
         return {}
@@ -603,7 +608,6 @@ def _load_sprite_override_json(
     tier: str = "normal",
 ) -> dict[str, str]:
     """Shared loader for uniques.json and sets.json."""
-    import json
 
     if not json_path.exists():
         return {}
@@ -644,9 +648,6 @@ def prepare_bulk_sprite_loader() -> None:
     first, D2R Resurrected CASC fallback). Safe to call multiple
     times; the loaders are idempotent.
     """
-    from d2rr_toolkit.game_data.item_types import load_item_types
-    from d2rr_toolkit.game_data.item_names import load_item_names
-    from d2rr_toolkit.game_data.sets import load_sets
 
     load_item_types()
     load_item_names()
@@ -714,15 +715,10 @@ def load_all_item_sprites(
     if game_paths is None:
         raise ValueError("game_paths is required")
 
-    # Pillow is a declared runtime dep (see pyproject.toml). Import
-    # eagerly so a missing Pillow surfaces here rather than deep inside
-    # the decoder path.
-    try:
-        from PIL import Image  # noqa: F401 - imported for import-time failure
-    except ImportError as e:
-        raise RuntimeError(
-            "Pillow is required for bulk sprite loading. Install with: pip install Pillow"
-        ) from e
+    # Pillow is a declared runtime dep (see pyproject.toml).  The
+    # top-level ``from PIL import Image`` already enforces this at
+    # module load - a missing Pillow surfaces as ImportError at import
+    # time rather than deep inside the decoder path.
 
     t_start = time.perf_counter()
     logger.info("Starting bulk item sprite preload")
@@ -868,7 +864,6 @@ def load_all_item_sprites(
         logger.debug("uniques.json entries: %d", len(unique_sprite_map))
 
         try:
-            from d2rr_toolkit.game_data.item_names import get_item_names_db
 
             _names_db = get_item_names_db()
         except Exception:
@@ -950,7 +945,6 @@ def load_all_item_sprites(
         logger.debug("sets.json entries: %d", len(set_sprite_map))
 
         try:
-            from d2rr_toolkit.game_data.item_names import get_item_names_db
 
             _names_db = get_item_names_db()
         except Exception:
@@ -1054,7 +1048,6 @@ def _lookup_invfile(item_code: str) -> str:
     lookups - those are resolved via uniques.json / sets.json now.
     """
     try:
-        from d2rr_toolkit.game_data.item_types import get_item_type_db
 
         return get_item_type_db().get_inv_file(item_code) or ""
     except Exception:

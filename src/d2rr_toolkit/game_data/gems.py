@@ -6,22 +6,22 @@ item slot type (weapon / helm=body-armor / shield).
 [SOURCE: excel/reimagined/gems.txt - always read at runtime]
 """
 
-from __future__ import annotations
-
 import csv
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from d2rr_toolkit.meta.source_versions import SourceVersions
+from d2rr_toolkit.adapters.casc import read_game_data_rows
+from d2rr_toolkit.meta import cached_load
 
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(slots=True)
 class GemSocketBonus:
     """One property granted when a gem/rune is socketed in a specific slot."""
 
@@ -31,7 +31,7 @@ class GemSocketBonus:
     max_val: int = 0
 
 
-@dataclass
+@dataclass(slots=True)
 class GemDefinition:
     """All socketing bonuses for one gem or rune."""
 
@@ -94,7 +94,7 @@ class GemsDatabase:
         logger.info("GemsDatabase: %d gem/rune entries loaded from %s", loaded, source)
 
     @staticmethod
-    def _read_mods(row: dict, prefix: str) -> list[GemSocketBonus]:
+    def _read_mods(row: dict[str, Any], prefix: str) -> list[GemSocketBonus]:
         """Read up to 3 mod slots for a given prefix (weapon/helm/shield)."""
         mods: list[GemSocketBonus] = []
         for i in range(1, 4):
@@ -174,11 +174,9 @@ def load_gems(
             rely on the platformdirs default
             (``%LOCALAPPDATA%/d2rr-toolkit/data_cache`` on Windows).
     """
-    from d2rr_toolkit.meta import cached_load
 
     def _build() -> None:
         """Populate the :class:`GemsDatabase` via the Iron Rule."""
-        from d2rr_toolkit.adapters.casc import read_game_data_rows
 
         casc_path = "data:data/global/excel/gems.txt"
         rows = read_game_data_rows(casc_path)

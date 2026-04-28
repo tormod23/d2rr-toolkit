@@ -58,7 +58,7 @@ save files - usable as a Python library **and** as a ready-made
 
 ## Requirements
 
-- Python 3.10 or Higher
+- Python 3.14 or Higher
 - A local installation of **Diablo II: Resurrected (D2R)** with the
   **Reimagined mod** installed on top - this is what "D2RR" means.
   The base D2R install typically lives at

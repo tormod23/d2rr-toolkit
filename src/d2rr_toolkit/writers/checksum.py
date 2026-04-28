@@ -12,8 +12,6 @@ Algorithm:
 d2itemreader. Consistent with all parsed checksums matching their files.
 """
 
-from __future__ import annotations
-
 import struct
 import time
 

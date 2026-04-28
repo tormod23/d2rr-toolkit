@@ -21,7 +21,7 @@ d2rr_toolkit/casc/
 
 ## Dependencies
 
-- **Python 3.10+** (uses `X | Y` union syntax)
+- **Python 3.14+** (uses `X | Y` union syntax, PEP 695 `type` aliases, PEP 649 deferred annotations)
 - **Standard library only** for the CASC reader itself (pathlib, struct, zlib, csv, fnmatch)
 - **Pillow** (optional) -- required only for `casc.sprites` (sprite-to-image conversion)
 

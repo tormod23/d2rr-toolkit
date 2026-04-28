@@ -5,8 +5,6 @@ character overview / raw header dump to the terminal. Full tooltip-style
 item inspection lives in :mod:`d2rr_toolkit.cli._inspect`.
 """
 
-from __future__ import annotations
-
 import logging
 from pathlib import Path
 
@@ -25,6 +23,12 @@ from d2rr_toolkit.parsers.d2s_parser import D2SParser
 
 from . import app, console, err_console
 from ._common import _load_game_data
+import traceback
+import struct
+from ._inspect import _render_character
+from d2rr_toolkit.game_data.charstats import get_charstats_db
+from d2rr_toolkit.game_data.item_stat_cost import get_isc_db
+from d2rr_toolkit.game_data.item_types import get_item_type_db
 
 
 @app.command()
@@ -62,9 +66,6 @@ def parse(
         )
         raise typer.Exit(1)
     # Game data loaded successfully - get database handles.
-    from d2rr_toolkit.game_data.item_stat_cost import get_isc_db
-    from d2rr_toolkit.game_data.item_types import get_item_type_db
-    from d2rr_toolkit.game_data.charstats import get_charstats_db
 
     if True:  # keep indent level for minimal diff
         isc = get_isc_db()
@@ -102,7 +103,6 @@ def parse(
     except ToolkitError as e:
         err_console.print(f"[bold red]Parse error:[/] {e}")
         if verbose:
-            import traceback
 
             traceback.print_exc()
         raise typer.Exit(1)
@@ -110,7 +110,6 @@ def parse(
     # Imported lazily so that ``_inspect`` (which registers the ``inspect``
     # command) is not pulled in at module load, keeping the --help command
     # order parse / dump-header / inspect / archive / stash.
-    from ._inspect import _render_character
 
     _render_character(character)
 
@@ -127,7 +126,6 @@ def dump_header(
     Example:
         d2rr-toolkit dump-header character.d2s
     """
-    import struct
 
     if not d2s_file.exists():
         err_console.print(f"File not found: {d2s_file}")
@@ -158,6 +156,12 @@ def dump_header(
 
     # Find 'gf' marker
     gf_pos = data.find(b"gf", 800)
+
+    # Charstats DB needed for class-name resolution; load on demand because
+    # dump-header is sometimes invoked on a corrupt/unparseable save where
+    # full game-data load would fail.
+
+    cs = get_charstats_db()
 
     table = Table(box=box.ROUNDED, show_header=True, header_style="bold cyan")
     table.add_column("Field", style="dim")

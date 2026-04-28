@@ -18,13 +18,11 @@ For the inspect display, both types are shown per item:
 [SOURCE: excel/reimagined/sets.txt + setitems.txt - always read at runtime]
 """
 
-from __future__ import annotations
-
 import csv
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from d2rr_toolkit.game_data.item_stat_cost import ItemStatCostDatabase
@@ -32,11 +30,13 @@ if TYPE_CHECKING:
     from d2rr_toolkit.game_data.property_formatter import PropertyFormatter
     from d2rr_toolkit.game_data.skills import SkillDatabase
     from d2rr_toolkit.meta.source_versions import SourceVersions
+from d2rr_toolkit.adapters.casc import read_game_data_rows
+from d2rr_toolkit.meta import cached_load
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(slots=True)
 class SetBonusEntry:
     """One property entry in a set bonus tier."""
 
@@ -80,6 +80,8 @@ class SetBonusEntry:
             stat_id = prop_def.primary_stat_id(isc_db)
             stat_def = isc_db.get(stat_id) if stat_id is not None else None
             if stat_def is not None and stat_def.encode in (2, 3):
+                # stat_def is non-None only when stat_id was non-None above.
+                assert stat_id is not None
                 return self._format_encoded_skill(
                     stat_id,
                     stat_def.encode,
@@ -159,7 +161,7 @@ class SetBonusEntry:
         return formatter.format_prop(prop, isc_db, skills_db=skills_db, lang=lang)
 
 
-@dataclass
+@dataclass(slots=True)
 class SetTierBonus:
     """A set bonus tier: the bonus(es) active when N pieces are equipped."""
 
@@ -168,7 +170,7 @@ class SetTierBonus:
     entries: list[SetBonusEntry] = field(default_factory=list)
 
 
-@dataclass
+@dataclass(slots=True)
 class SetDefinition:
     """Complete definition of one set from sets.txt."""
 
@@ -182,7 +184,7 @@ class SetDefinition:
         return len(self.member_names)
 
 
-@dataclass
+@dataclass(slots=True)
 class SetItemTierBonus:
     """Per-item bonus active when N pieces of the set are equipped."""
 
@@ -190,7 +192,7 @@ class SetItemTierBonus:
     entries: list[SetBonusEntry] = field(default_factory=list)
 
 
-@dataclass
+@dataclass(slots=True)
 class SetItemDefinition:
     """Definition of one set item from setitems.txt."""
 
@@ -205,7 +207,7 @@ class SetItemDefinition:
     # Note: item-own props (prop1-9) are in the binary magical_properties; not stored here.
 
 
-def _parse_p_entries(row: dict, tier: int) -> list[SetBonusEntry]:
+def _parse_p_entries(row: dict[str, Any], tier: int) -> list[SetBonusEntry]:
     """Parse partial set bonus entries from sets.txt for a given tier (2-5)."""
     entries = []
     for slot in ("a", "b"):
@@ -222,7 +224,7 @@ def _parse_p_entries(row: dict, tier: int) -> list[SetBonusEntry]:
     return entries
 
 
-def _parse_f_entries(row: dict) -> list[SetBonusEntry]:
+def _parse_f_entries(row: dict[str, Any]) -> list[SetBonusEntry]:
     """Parse full set bonus entries from sets.txt (FCode1..FCode8)."""
     entries = []
     for i in range(1, 9):
@@ -239,7 +241,7 @@ def _parse_f_entries(row: dict) -> list[SetBonusEntry]:
     return entries
 
 
-def _parse_aprop_entries(row: dict, tier: int) -> list[SetBonusEntry]:
+def _parse_aprop_entries(row: dict[str, Any], tier: int) -> list[SetBonusEntry]:
     """Parse per-item set bonus entries from setitems.txt for a given tier (1-5).
 
     Tier 1 -> 2 pieces required (aprop1a/1b)
@@ -457,10 +459,8 @@ def load_sets(
             instance preferred across batched loaders.
         cache_dir: Optional cache root override.
     """
-    from d2rr_toolkit.meta import cached_load
 
     def _build() -> None:
-        from d2rr_toolkit.adapters.casc import read_game_data_rows
 
         sets_rows = read_game_data_rows("data:data/global/excel/sets.txt")
         setitems_rows = read_game_data_rows("data:data/global/excel/setitems.txt")

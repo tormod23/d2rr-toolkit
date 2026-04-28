@@ -12,8 +12,6 @@ All [BV] / [BINARY_VERIFIED] / [TC##] tags preserved at their new
 line numbers.
 """
 
-from __future__ import annotations
-
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -2394,7 +2392,6 @@ class ItemsParserMixin:
             # item code exists in the game data (armor/weapon/misc).
             try:
                 reader.seek_bit(pos + 53)
-                from d2rr_toolkit.parsers.huffman import decode_item_code
 
                 code, _ = decode_item_code(reader)
                 db = get_item_type_db()
@@ -3002,7 +2999,6 @@ class ItemsParserMixin:
             True if a valid item start was found and the reader is positioned there.
         """
         reader = self._require_reader()
-        from d2rr_toolkit.parsers.huffman import decode_item_code
 
         # Align to next byte boundary first
         reader.skip_to_byte_boundary()

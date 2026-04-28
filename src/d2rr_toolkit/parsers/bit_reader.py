@@ -29,8 +29,6 @@ Sources confirming this convention:
   - [BV] stats decoded correctly with plain LSB-first
 """
 
-from __future__ import annotations
-
 import logging
 
 from d2rr_toolkit.exceptions import BitReaderError

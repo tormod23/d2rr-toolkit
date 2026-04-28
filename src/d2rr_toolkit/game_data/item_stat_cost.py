@@ -19,8 +19,6 @@ Data source priority: excel/reimagined/ first (mod overrides vanilla values).
              individually binary-verified against item binary data.
 """
 
-from __future__ import annotations
-
 import logging
 from dataclasses import dataclass
 from pathlib import Path
@@ -28,11 +26,14 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from d2rr_toolkit.meta.source_versions import SourceVersions
+import csv as _csv
+from d2rr_toolkit.adapters.casc import read_game_data_rows
+from d2rr_toolkit.meta import cached_load
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(slots=True)
 class StatDefinition:
     """Definition of one stat from ItemStatCost.txt."""
 
@@ -68,7 +69,6 @@ class ItemStatCostDatabase:
             return
         try:
             with open(path, encoding="utf-8", errors="replace") as f:
-                import csv as _csv
 
                 rows = list(_csv.DictReader(f, delimiter="\t"))
         except OSError as e:
@@ -162,7 +162,7 @@ class ItemStatCostDatabase:
 
         headers = lines[0].strip().split("	")
 
-        def col(n):
+        def col(n: str) -> int | None:
             try:
                 return headers.index(n)
             except ValueError:
@@ -187,7 +187,7 @@ class ItemStatCostDatabase:
             try:
                 sid = int(p[idx_id].strip())
 
-                def gi(idx, default=0):
+                def gi(idx: int | None, default: int = 0) -> int:
                     if idx is None or idx >= len(p):
                         return default
                     v = p[idx].strip()
@@ -208,7 +208,7 @@ class ItemStatCostDatabase:
                     csv_param=0,
                 )
                 loaded += 1
-            except (ValueError, IndexError):
+            except ValueError, IndexError:
                 # Malformed patch row - skip it silently. The patch file
                 # is optional and user-editable; bad rows should not break
                 # the whole load.
@@ -257,10 +257,8 @@ def load_item_stat_cost(
             route this into a ``tmp_path`` fixture; production
             callers rely on the platformdirs default.
     """
-    from d2rr_toolkit.meta import cached_load
 
     def _build() -> None:
-        from d2rr_toolkit.adapters.casc import read_game_data_rows
 
         casc_path = "data:data/global/excel/itemstatcost.txt"
         rows = read_game_data_rows(casc_path)

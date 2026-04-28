@@ -7,8 +7,6 @@ Step 1+2 of the CASC loading pipeline:
 Reference: CascLib by Ladislav Zezula - CascOpenStorage.cpp
 """
 
-from __future__ import annotations
-
 import csv
 import logging
 import re

@@ -8,8 +8,6 @@ row index (11 bits) in the item binary which points into this file.
 GoMule reference: ``D2TxtFile.AUTOMAGIC.getRow(class_data - 1)``
 """
 
-from __future__ import annotations
-
 import csv
 import logging
 from dataclasses import dataclass, field
@@ -18,6 +16,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from d2rr_toolkit.meta.source_versions import SourceVersions
+from d2rr_toolkit.adapters.casc import read_game_data_rows
+from d2rr_toolkit.meta import cached_load
 
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ HIDDEN_AUTOMOD_CODES: set[str] = {
 }
 
 
-@dataclass
+@dataclass(slots=True)
 class AutomodEntry:
     """One mod slot from an automagic.txt row (up to 3 per row)."""
 
@@ -45,7 +45,7 @@ class AutomodEntry:
         return self.value_min == self.value_max
 
 
-@dataclass
+@dataclass(slots=True)
 class AutomodDefinition:
     """One row from automagic.txt."""
 
@@ -171,11 +171,9 @@ def load_automagic(
             rely on the platformdirs default
             (``%LOCALAPPDATA%/d2rr-toolkit/data_cache`` on Windows).
     """
-    from d2rr_toolkit.meta import cached_load
 
     def _build() -> None:
         """Populate the :class:`AutomagicDatabase` via the Iron Rule."""
-        from d2rr_toolkit.adapters.casc import read_game_data_rows
 
         casc_path = "data:data/global/excel/automagic.txt"
         rows = read_game_data_rows(casc_path)

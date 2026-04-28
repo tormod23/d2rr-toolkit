@@ -10,8 +10,6 @@ The '*Id' column mirrors the row index and is used for validation.
 Data source priority: excel/reimagined/ first (mod overrides vanilla).
 """
 
-from __future__ import annotations
-
 import csv
 import logging
 from dataclasses import dataclass
@@ -19,12 +17,16 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from d2rr_toolkit.game_data.item_names import StringsDatabase
     from d2rr_toolkit.meta.source_versions import SourceVersions
+from d2rr_toolkit.adapters.casc import read_game_data_rows
+from d2rr_toolkit.game_data.item_names import get_item_names_db
+from d2rr_toolkit.meta import cached_load
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(slots=True)
 class SkillDefinition:
     """Definition of one skill from skills.txt."""
 
@@ -119,7 +121,7 @@ class SkillDatabase:
         self,
         skill_id: int,
         *,
-        strings_db: "object | None" = None,
+        strings_db: "StringsDatabase | None" = None,
         lang: str = "enUS",
     ) -> str | None:
         """Return the player-facing skill label for ``skill_id``.
@@ -177,7 +179,6 @@ class SkillDatabase:
         # Try string-table resolution first; fall back to skill name.
         if defn.skilldesc:
             try:
-                from d2rr_toolkit.game_data.item_names import get_item_names_db
 
                 strings = get_item_names_db()._strings
                 str_key = self._skilldesc_to_str_name.get(defn.skilldesc)
@@ -251,10 +252,8 @@ def load_skills(
         cache_dir: Optional cache root override (tests route this
             into a ``tmp_path``).
     """
-    from d2rr_toolkit.meta import cached_load
 
     def _build() -> None:
-        from d2rr_toolkit.adapters.casc import read_game_data_rows
 
         rows = read_game_data_rows("data:data/global/excel/skills.txt")
         if not rows:

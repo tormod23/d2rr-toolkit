@@ -12,14 +12,13 @@ Usage:
     db.mark_restored(1)
 """
 
-from __future__ import annotations
-
 import json
 import logging
 import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Self
 
 from d2rr_toolkit.database.modes import (
     GameMode,
@@ -71,7 +70,7 @@ _MIGRATION_ADD_INVTRANSFORM = "ALTER TABLE items ADD COLUMN invtransform TEXT NO
 _MIGRATION_ADD_CHILD_COUNT = "ALTER TABLE items ADD COLUMN child_count INTEGER NOT NULL DEFAULT 0"
 
 
-@dataclass
+@dataclass(slots=True)
 class StoredItem:
     """An item stored in the database."""
 
@@ -184,7 +183,7 @@ class ItemDatabase:
         """Close the underlying SQLite connection."""
         self._conn.close()
 
-    def __enter__(self) -> "ItemDatabase":
+    def __enter__(self) -> Self:
         """Support ``with ItemDatabase(...) as db:`` usage."""
         return self
 
@@ -256,6 +255,10 @@ class ItemDatabase:
         )
         self._conn.commit()
         row_id = cursor.lastrowid
+        # SQLite always populates ``lastrowid`` after a successful INSERT
+        # (we don't use WITHOUT ROWID); the type stub returns ``int | None``
+        # to cover edge cases that don't apply here.
+        assert row_id is not None
         logger.info("Stored item '%s' (%s) as DB id=%d", display_name, item.item_code, row_id)
         return row_id
 
@@ -282,7 +285,7 @@ class ItemDatabase:
     ) -> list[StoredItem]:
         """Search items by attributes."""
         conditions = ["status = ?"]
-        params: list = [status]
+        params: list[Any] = [status]
         if name:
             conditions.append("item_name LIKE ?")
             params.append(f"%{name}%")

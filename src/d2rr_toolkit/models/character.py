@@ -8,20 +8,31 @@ Fields without [BV] comments are either derived or not yet
 individually verified (though their container structure is verified).
 """
 
-from __future__ import annotations
-
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field
+from d2rr_toolkit.constants import (
+    LOCATION_BELT,
+    LOCATION_EQUIPPED,
+    LOCATION_NAMES,
+    LOCATION_STORED,
+    PANEL_CUBE,
+    PANEL_INVENTORY,
+    PANEL_NAMES,
+    PANEL_STASH,
+    SLOT_NAMES,
+)
 
+
+type Gender = Literal["male", "female"]
 
 # Gender mapping per class ID.
 # Standard D2 LoD class genders + D2R Reimagined "Warlock" (class 7).
 # Confirmed in-game:
 #   female: Amazon, Sorceress, Assassin
 #   male:   Necromancer, Paladin, Barbarian, Druid, Warlock
-_CLASS_GENDER: dict[int, Literal["male", "female"]] = {
+_CLASS_GENDER: dict[int, Gender] = {
     0: "female",  # Amazon
     1: "female",  # Sorceress
     2: "male",  # Necromancer
@@ -120,7 +131,7 @@ class CharacterHeader(BaseModel):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def gender(self) -> Literal["male", "female"]:
+    def gender(self) -> Gender:
         """Character gender derived from class ID.
 
         Returns "male" as default for unknown class IDs (e.g. future mod classes).
@@ -488,11 +499,11 @@ class ParsedItem(BaseModel):
     )
 
     # Properties placeholder - populated after ItemStatCost.txt is loaded
-    magical_properties: list[dict] = Field(
+    magical_properties: list[dict[str, Any]] = Field(
         default_factory=list,
         description="Magical property list. [SPEC_ONLY] - ItemStatCost.txt needed.",
     )
-    set_bonus_properties: list[dict] = Field(
+    set_bonus_properties: list[dict[str, Any]] = Field(
         default_factory=list,
         description=(
             "Active per-item set bonus properties from the binary (decoded via bonus_mask). "
@@ -589,7 +600,7 @@ class ParsedItem(BaseModel):
             "Row index into runes.txt (0-based). [SPEC_ONLY]"
         ),
     )
-    runeword_properties: list[dict] = Field(
+    runeword_properties: list[dict[str, Any]] = Field(
         default_factory=list,
         description=(
             "Runeword-specific property list (second ISC prop block for runeword items). "
@@ -607,21 +618,18 @@ class ParsedItem(BaseModel):
     @property
     def location_name(self) -> str:
         """Human-readable location name."""
-        from d2rr_toolkit.constants import LOCATION_NAMES
 
         return LOCATION_NAMES.get(self.flags.location_id, f"unknown({self.flags.location_id})")
 
     @property
     def panel_name(self) -> str:
         """Human-readable panel/storage name."""
-        from d2rr_toolkit.constants import PANEL_NAMES
 
         return PANEL_NAMES.get(self.flags.panel_id, f"unknown({self.flags.panel_id})")
 
     @property
     def slot_name(self) -> str:
         """Human-readable equipped slot name."""
-        from d2rr_toolkit.constants import SLOT_NAMES
 
         return SLOT_NAMES.get(self.flags.equipped_slot, f"slot({self.flags.equipped_slot})")
 
@@ -706,7 +714,6 @@ class ParsedCharacter(BaseModel):
 
     def items_in_inventory(self) -> list[ParsedItem]:
         """All items stored in the personal inventory."""
-        from d2rr_toolkit.constants import LOCATION_STORED, PANEL_INVENTORY
 
         return [
             item
@@ -716,13 +723,11 @@ class ParsedCharacter(BaseModel):
 
     def items_in_belt(self) -> list[ParsedItem]:
         """All items in the belt slots."""
-        from d2rr_toolkit.constants import LOCATION_BELT
 
         return [item for item in self.items if item.flags.location_id == LOCATION_BELT]
 
     def items_equipped(self) -> list[ParsedItem]:
         """All equipped items."""
-        from d2rr_toolkit.constants import LOCATION_EQUIPPED
 
         return [item for item in self.items if item.flags.location_id == LOCATION_EQUIPPED]
 
@@ -734,7 +739,6 @@ class ParsedCharacter(BaseModel):
         (PANEL_CUBE) with ``location_id == LOCATION_STORED``. This helper
         does NOT return the cube container itself - only its contents.
         """
-        from d2rr_toolkit.constants import LOCATION_STORED, PANEL_CUBE
 
         return [
             item
@@ -749,7 +753,6 @@ class ParsedCharacter(BaseModel):
         shared stash tabs - those live in the d2i file and are parsed by
         :class:`D2IParser` separately).
         """
-        from d2rr_toolkit.constants import LOCATION_STORED, PANEL_STASH
 
         return [
             item
@@ -765,7 +768,6 @@ class ParsedCharacter(BaseModel):
         (shield or quiver, empty when the weapon is two-handed),
         Right Ring, Left Ring, Belt, Boots, Gloves.
         """
-        from d2rr_toolkit.constants import LOCATION_EQUIPPED
 
         return [item for item in self.merc_items if item.flags.location_id == LOCATION_EQUIPPED]
 

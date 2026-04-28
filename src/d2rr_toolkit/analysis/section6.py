@@ -48,8 +48,6 @@ under ``tests/cases/**/*.d2i``):
     enough metadata to test candidate hypotheses against any d2i.
 """
 
-from __future__ import annotations
-
 import struct
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
@@ -72,7 +70,7 @@ if TYPE_CHECKING:
 D2I_SIGNATURE: int = 0xAA55AA55
 
 
-@dataclass
+@dataclass(slots=True)
 class Section6Record:
     """One 10-byte record from the Reimagined audit block.
 
@@ -94,7 +92,7 @@ class Section6Record:
         return self.marker == D2I_AUDIT_RECORD_MARKER
 
 
-@dataclass
+@dataclass(slots=True)
 class Section6Page:
     """Decoded representation of the Reimagined audit-block page.
 

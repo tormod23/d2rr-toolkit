@@ -5,8 +5,6 @@ Consolidates the "item code -> display color" mapping that was previously
 duplicated across cli.py and gui/server.py into a single module.
 """
 
-from __future__ import annotations
-
 # ── D2R in-game colour codes (exact hex values) ────────────────────────────────
 COLOR_MAGIC = "#4169E1"  # Royal Blue  - Magic items
 COLOR_SET = "#00FF00"  # Lime Green  - Set items + item-specific set bonuses

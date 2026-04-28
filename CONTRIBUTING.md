@@ -15,7 +15,7 @@ those should be paraphrased or translated in-line.
 ## Development environment
 
 ```bash
-# Create a fresh venv (Python 3.10, 3.11, or 3.12)
+# Create a fresh venv (Python 3.14)
 python -m venv .venv
 source .venv/bin/activate        # or .venv\Scripts\activate on Windows
 

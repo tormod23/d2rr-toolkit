@@ -4,8 +4,6 @@ Provides bit-level write operations and item position patching used by
 both the D2S writer (character files) and D2I writer (shared stash).
 """
 
-from __future__ import annotations
-
 import secrets
 from typing import TYPE_CHECKING
 
@@ -14,6 +12,9 @@ from d2rr_toolkit.exceptions import D2SWriteError
 
 if TYPE_CHECKING:
     from d2rr_toolkit.models.character import ParsedItem
+from d2rr_toolkit.game_data.item_types import get_item_type_db
+from d2rr_toolkit.parsers.bit_reader import BitReader
+from d2rr_toolkit.parsers.huffman import decode_item_code
 
 
 # ── Huffman encoder -----------------------------------------------------------
@@ -151,7 +152,6 @@ def synthesize_simple_item_blob(
                     exceeds its bit width.
     """
     if is_quantity_item is None:
-        from d2rr_toolkit.game_data.item_types import get_item_type_db
 
         is_quantity_item = bool(get_item_type_db().is_quantity_item(code))
 
@@ -325,8 +325,6 @@ def _get_uid_bit_position(blob: bytes) -> int | None:
     """
     if read_bits(blob, ITEM_BIT_SIMPLE, 1):
         return None
-    from d2rr_toolkit.parsers.bit_reader import BitReader
-    from d2rr_toolkit.parsers.huffman import decode_item_code
 
     reader = BitReader(blob)
     reader.seek_bit(ITEM_BIT_HUFFMAN_START)

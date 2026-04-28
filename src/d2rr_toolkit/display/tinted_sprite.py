@@ -27,8 +27,6 @@ Usage::
         qimg = QImage(result.rgba, result.width, result.height, QImage.Format_RGBA8888)
 """
 
-from __future__ import annotations
-
 import logging
 import threading
 from dataclasses import dataclass
@@ -38,6 +36,16 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from d2rr_toolkit.models.character import ParsedItem
     from d2rr_toolkit.adapters.casc.reader import CASCReader
+from d2rr_toolkit.display.invtransform import get_invtransform
+from d2rr_toolkit.display.palette import (
+    load_colormap,
+    load_colors_txt,
+    load_palette,
+)
+from d2rr_toolkit.game_data.item_names import get_item_names_db
+from d2rr_toolkit.game_data.item_types import get_item_type_db
+from d2rr_toolkit.game_data.sets import get_sets_db
+from d2rr_toolkit.sprites.dc6_indexed import decode_dc6_indexed
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +53,7 @@ logger = logging.getLogger(__name__)
 # ── Public data class ──────────────────────────────────────────────────────
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class TintedSpriteResult:
     """RGBA pixel buffer ready for GUI consumption.
 
@@ -160,14 +168,12 @@ def get_tinted_sprite(item: "ParsedItem") -> TintedSpriteResult | None:
         return None
 
     # Step 1: color code from get_invtransform.
-    from d2rr_toolkit.display.invtransform import get_invtransform
 
     code = get_invtransform(item)
     if code is None:
         return None
 
     # Step 2: tint id
-    from d2rr_toolkit.display.palette import load_colors_txt
 
     try:
         code_map = load_colors_txt(_casc)
@@ -181,7 +187,6 @@ def get_tinted_sprite(item: "ParsedItem") -> TintedSpriteResult | None:
         return None
 
     # Step 3: colormap id from InvTrans column of the item's base row
-    from d2rr_toolkit.game_data.item_types import get_item_type_db
 
     type_db = get_item_type_db()
     colormap_id = type_db.get_inv_transform_id(item.item_code)
@@ -206,7 +211,6 @@ def get_tinted_sprite(item: "ParsedItem") -> TintedSpriteResult | None:
     if dc6_bytes is None:
         return None
 
-    from d2rr_toolkit.sprites.dc6_indexed import decode_dc6_indexed
 
     try:
         frame = decode_dc6_indexed(dc6_bytes, frame=0)
@@ -215,7 +219,6 @@ def get_tinted_sprite(item: "ParsedItem") -> TintedSpriteResult | None:
         return None
 
     # Step 6: palette + colormap
-    from d2rr_toolkit.display.palette import load_colormap, load_palette
 
     try:
         palette = load_palette(_casc, "act1")
@@ -258,9 +261,6 @@ def _resolve_invfile(item: "ParsedItem") -> str:
 
     Returns the first non-empty match, or an empty string.
     """
-    from d2rr_toolkit.game_data.item_names import get_item_names_db
-    from d2rr_toolkit.game_data.sets import get_sets_db
-    from d2rr_toolkit.game_data.item_types import get_item_type_db
 
     # 1. Unique override
     unique_type_id = getattr(item, "unique_type_id", None)

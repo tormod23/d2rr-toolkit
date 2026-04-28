@@ -7,8 +7,6 @@ SAFETY: Every write operation is preceded by an automatic backup.
 The written file is verified by re-parsing before completion.
 """
 
-from __future__ import annotations
-
 import logging
 from pathlib import Path
 
@@ -22,6 +20,8 @@ from d2rr_toolkit.writers.d2i_writer import (
     D2IWriterIntegrityError,
     _find_sections,
 )
+from d2rr_toolkit.models.character import ItemFlags
+from d2rr_toolkit.parsers.d2i_parser import D2IParser
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +58,6 @@ def _verify_d2i_on_disk(
                               to be after the operation.
         backup_path:          Path to the pre-write backup used for rollback.
     """
-    from d2rr_toolkit.parsers.d2i_parser import D2IParser
 
     def _rollback(reason: str) -> None:
         try:
@@ -189,7 +188,6 @@ def extract_from_d2i(
     Raises:
         ArchiveError: If extraction fails at any step.
     """
-    from d2rr_toolkit.parsers.d2i_parser import D2IParser
 
     # Step 1: BACKUP
     backup_path = create_backup(d2i_path)
@@ -305,8 +303,6 @@ def restore_to_d2i(
     Raises:
         ArchiveError: If restoration fails.
     """
-    from d2rr_toolkit.parsers.d2i_parser import D2IParser
-    from d2rr_toolkit.models.character import ItemFlags
 
     # Step 1: BACKUP
     backup_path = create_backup(d2i_path)

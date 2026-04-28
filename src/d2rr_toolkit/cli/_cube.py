@@ -14,15 +14,26 @@ backup via :mod:`d2rr_toolkit.backup` before touching the file. Pass
 ``--out <path>`` to write to a separate file and skip the backup.
 """
 
-from __future__ import annotations
-
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import typer
 from rich.table import Table
 
 from . import app, console, err_console
+
+if TYPE_CHECKING:
+    from d2rr_toolkit.operations.rune_cube_up import CubeUpResult
+from d2rr_toolkit.operations.rune_cube_up import (
+    CannotUpgradeMaxRuneError,
+    InvalidRuneCodeError,
+    NotEnoughRunesError,
+    Section5MissingError,
+    StackCapExceededError,
+    cube_up_file_bulk,
+    cube_up_file_single,
+)
 
 cube_app = typer.Typer(
     help="Transmute runes in Section 5 of the shared stash - cube up pairs into the next tier."
@@ -46,7 +57,7 @@ def _parse_min_keep(specs: list[str]) -> dict[str, int]:
     return out
 
 
-def _print_result_table(result, title: str) -> None:
+def _print_result_table(result: "CubeUpResult", title: str) -> None:
     """Render a :class:`CubeUpResult` as a compact summary table."""
     tbl = Table(title=title)
     tbl.add_column("rune")
@@ -99,14 +110,6 @@ def cmd_rune(
     Example:
         d2rr-toolkit cube-up rune shared.d2i --rune r01 --pairs 10
     """
-    from d2rr_toolkit.operations.rune_cube_up import (
-        CannotUpgradeMaxRuneError,
-        InvalidRuneCodeError,
-        NotEnoughRunesError,
-        Section5MissingError,
-        StackCapExceededError,
-        cube_up_file_single,
-    )
 
     backup = not (no_backup or out is not None)
     try:
@@ -166,10 +169,6 @@ def cmd_bulk(
     Example:
         d2rr-toolkit cube-up bulk shared.d2i --keep r09:3 --keep r15:20
     """
-    from d2rr_toolkit.operations.rune_cube_up import (
-        Section5MissingError,
-        cube_up_file_bulk,
-    )
 
     min_keep = _parse_min_keep(keep) if keep else None
     backup = not (no_backup or out is not None)

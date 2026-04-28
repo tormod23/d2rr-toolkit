@@ -39,8 +39,6 @@ the toolkit itself, always import it explicitly::
     from d2rr_toolkit.logging import enable_logging
 """
 
-from __future__ import annotations
-
 import logging as _logging
 
 __all__ = ["enable_logging", "disable_logging"]

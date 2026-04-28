@@ -31,8 +31,6 @@ D2R Install + Mod Dir are read-only; the D2RR save directory is the
 only location the toolkit writes to.
 """
 
-from __future__ import annotations
-
 import logging
 import os
 from dataclasses import dataclass, field
@@ -146,7 +144,7 @@ DEFAULT_MOD_DIR: Path | None = _default_mod_dir(DEFAULT_D2R_INSTALL)
 DEFAULT_SAVE_DIR: Path | None = _default_save_dir()
 
 
-@dataclass
+@dataclass(slots=True)
 class GamePaths:
     """Resolved paths to all game data sources.
 

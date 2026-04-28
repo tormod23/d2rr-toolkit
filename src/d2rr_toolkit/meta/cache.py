@@ -93,8 +93,6 @@ Readers open, read into memory, then close the file before calling
 invalidate a file handle mid-deserialise.
 """
 
-from __future__ import annotations
-
 import hashlib
 import hmac
 import logging
@@ -111,6 +109,8 @@ from d2rr_toolkit.meta.source_versions import (
     SourceVersionsError,
     get_source_versions,
 )
+import platformdirs
+from d2rr_toolkit.config import get_game_paths
 
 logger = logging.getLogger(__name__)
 
@@ -493,7 +493,6 @@ def _default_user_cache_dir() -> Path:
     install.
     """
     try:
-        import platformdirs
 
         root = Path(platformdirs.user_cache_dir("d2rr-toolkit"))
     except ImportError:
@@ -514,7 +513,6 @@ def _resolve_default_versions() -> SourceVersions | None:
     """
     global _default_versions_cache
     try:
-        from d2rr_toolkit.config import get_game_paths
 
         gp = get_game_paths()
     except Exception as e:  # noqa: BLE001 - unresolvable paths

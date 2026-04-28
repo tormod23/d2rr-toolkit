@@ -4,8 +4,6 @@ Hosts the game-data loader entry points that every command calls before
 touching a save file.
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 from d2rr_toolkit.game_data.charstats import load_charstats
@@ -19,6 +17,8 @@ from d2rr_toolkit.game_data.property_formatter import load_property_formatter
 from d2rr_toolkit.game_data.automagic import load_automagic
 from d2rr_toolkit.game_data.sets import load_sets
 from d2rr_toolkit.game_data.skills import load_skills
+from d2rr_toolkit.catalog import load_item_catalog
+from d2rr_toolkit.config import get_game_paths
 
 
 def _load_game_data(d2s_file: Path) -> bool:
@@ -30,7 +30,6 @@ def _load_game_data(d2s_file: Path) -> bool:
     needs the game data loaded before touching it) but plays no role
     in loader configuration any more.
     """
-    from d2rr_toolkit.config import get_game_paths
 
     gp = get_game_paths()
     if not gp.reimagined_excel.is_dir():
@@ -60,6 +59,5 @@ def _do_load_game_data() -> None:
     load_gems()
     # ItemCatalog depends on ItemTypeDatabase + ItemNamesDatabase
     # being populated - must come LAST.
-    from d2rr_toolkit.catalog import load_item_catalog
 
     load_item_catalog()

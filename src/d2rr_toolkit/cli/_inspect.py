@@ -7,8 +7,6 @@ in :mod:`d2rr_toolkit.cli._parse` imports :func:`_render_character` from
 here; nothing else reaches inside.
 """
 
-from __future__ import annotations
-
 import logging
 from pathlib import Path
 
@@ -49,8 +47,32 @@ from d2rr_toolkit.game_data.skills import get_skill_db
 from d2rr_toolkit.models.character import ParsedCharacter, ParsedItem
 from d2rr_toolkit.parsers.d2s_parser import D2SParser
 
+from typing import TYPE_CHECKING, Any
+
 from . import app, console, err_console
 from ._common import _load_game_data
+
+if TYPE_CHECKING:
+    from d2rr_toolkit.game_data.item_names import ItemNamesDatabase
+    from d2rr_toolkit.game_data.item_stat_cost import ItemStatCostDatabase
+    from d2rr_toolkit.game_data.item_types import ItemTypeDatabase
+    from d2rr_toolkit.game_data.properties import PropertiesDatabase
+    from d2rr_toolkit.game_data.property_formatter import PropertyFormatter
+    from d2rr_toolkit.game_data.sets import SetsDatabase
+    from d2rr_toolkit.game_data.skills import SkillDatabase
+    from d2rr_toolkit.parsers.d2i_parser import ParsedSharedStash, SharedStashTab
+import re
+from d2rr_toolkit.display import item_display
+from d2rr_toolkit.display.item_display import (
+    get_rune_letter,
+    get_tier_suffix,
+)
+from d2rr_toolkit.game_data.item_stat_cost import get_isc_db
+from d2rr_toolkit.game_data.item_types import (
+    ItemCategory as _IC,
+    get_item_type_db,
+)
+from d2rr_toolkit.parsers.d2i_parser import D2IParser
 
 # Local alias for the shared material-color function.
 _simple_item_color = get_item_display_color
@@ -195,7 +217,6 @@ def _add_item_row(table: Table, item: ParsedItem) -> None:
 
     # Defense / Durability - weapons have armor_data for durability but no defense
     if item.armor_data:
-        from d2rr_toolkit.game_data.item_types import get_item_type_db, ItemCategory as _IC
 
         dur = f"{item.armor_data.durability.current_durability}/{item.armor_data.durability.max_durability}"
         if get_item_type_db().classify(item.item_code) == _IC.ARMOR:
@@ -292,7 +313,6 @@ def _inspect_d2s(d2s_file: Path) -> None:
 
 def _inspect_d2i(d2i_file: Path) -> None:
     """Inspect a .d2i shared stash file."""
-    from d2rr_toolkit.parsers.d2i_parser import D2IParser
 
     try:
         parser = D2IParser(d2i_file)
@@ -317,7 +337,6 @@ def _inspect_d2i(d2i_file: Path) -> None:
 
 def _render_inspect(character: ParsedCharacter) -> None:
     """Render full item detail panels."""
-    from d2rr_toolkit.game_data.item_stat_cost import get_isc_db
 
     isc_db = get_isc_db()
     skills_db = get_skill_db()
@@ -358,7 +377,6 @@ def _render_inspect(character: ParsedCharacter) -> None:
 
     # ── Mercenary items ─────────────────────────────────────────────────────
     if character.merc_items:
-        from rich.text import Text
 
         console.print()
         console.print(Text("  Mercenary Equipment", style="bold"))
@@ -378,7 +396,7 @@ def _render_inspect(character: ParsedCharacter) -> None:
             )
 
 
-def _is_materials_tab(tab, type_db) -> bool:
+def _is_materials_tab(tab: "SharedStashTab", type_db: "ItemTypeDatabase") -> bool:
     """Return True if a tab consists mostly of simple items (gems/runes/materials)."""
     if not tab.items:
         return False
@@ -386,9 +404,17 @@ def _is_materials_tab(tab, type_db) -> bool:
     return simple_count > len(tab.items) * 0.7  # >70% simple items
 
 
-def _render_materials_tab(tab, names_db, type_db) -> None:
-    """Render a compact display for tabs with gems, runes, and materials."""
-    from rich.text import Text
+def _render_materials_tab(
+    tab: "SharedStashTab",
+    names_db: "ItemNamesDatabase",
+    type_db: "ItemTypeDatabase",
+) -> list[ParsedItem]:
+    """Render a compact display for tabs with gems, runes, and materials.
+
+    Returns the items that were not rendered as part of the compact list
+    (non-simple items: rares, magics, uniques) so the caller can render
+    them as full panels.
+    """
 
     # Classify items into sections
     gems: list[ParsedItem] = []
@@ -466,7 +492,7 @@ def _render_materials_tab(tab, names_db, type_db) -> None:
         "gmk": 7,
     }
 
-    def _gem_sort_key(item: ParsedItem) -> tuple:
+    def _gem_sort_key(item: ParsedItem) -> tuple[Any, ...]:
         code = item.item_code
         # Section 0: Obsolete classic gems
         if any(code.startswith(p) for p in OBSOLETE_GEM_PREFIXES):
@@ -517,7 +543,6 @@ def _render_materials_tab(tab, names_db, type_db) -> None:
             # Get display name (e.g. "El Rune")
             full_name = names_db.get_base_item_name(code) or code
             # Strip "(#N)" suffix, "\n~Pick Up~", and any leftover from strings.json
-            import re
 
             rune_name = re.sub(r"\s*\(#\d+\).*", "", full_name, flags=re.DOTALL).strip()
             qty = _display_qty(item)
@@ -557,10 +582,8 @@ def _render_materials_tab(tab, names_db, type_db) -> None:
     return other
 
 
-def _render_inspect_stash(stash) -> None:
+def _render_inspect_stash(stash: "ParsedSharedStash") -> None:
     """Render full item detail panels for a shared stash (.d2i)."""
-    from d2rr_toolkit.game_data.item_stat_cost import get_isc_db
-    from d2rr_toolkit.game_data.item_types import get_item_type_db
 
     isc_db = get_isc_db()
     skills_db = get_skill_db()
@@ -617,20 +640,22 @@ def _render_inspect_stash(stash) -> None:
 
 def _tier_suffix(item_code: str) -> str:
     """Return the tier display suffix - delegates to item_display."""
-    from d2rr_toolkit.game_data.item_types import get_item_type_db
-    from d2rr_toolkit.display.item_display import get_tier_suffix
 
     return get_tier_suffix(item_code, get_item_type_db())
 
 
-def _rune_letter(rune_code: str, names_db) -> str:
+def _rune_letter(rune_code: str, names_db: "ItemNamesDatabase") -> str:
     """Return the rune letter - delegates to item_display."""
-    from d2rr_toolkit.display.item_display import get_rune_letter
 
     return get_rune_letter(rune_code, names_db)
 
 
-def _format_properties(prop_list: list[dict], formatter, isc_db, skills_db) -> list[str]:
+def _format_properties(
+    prop_list: list[dict[str, Any]],
+    formatter: "PropertyFormatter",
+    isc_db: "ItemStatCostDatabase",
+    skills_db: "SkillDatabase",
+) -> list[str]:
     """Format a property list to display strings, returning non-None lines."""
     if not formatter.is_loaded() or not isc_db.is_loaded():
         return [
@@ -646,13 +671,12 @@ def _format_properties(prop_list: list[dict], formatter, isc_db, skills_db) -> l
     return formatter.format_properties_grouped_plain(prop_list, isc_db, skills_db)
 
 
-def _styled_prop_lines(prop_lines: list[str]) -> list:
+def _styled_prop_lines(prop_lines: list[str]) -> list[Any]:
     """Apply per-line coloring: Corrupted=red, Enchantments=purple, rest=magic-blue.
 
     Returns a list of Rich Text objects with Corrupted first, then
     Enchantments, then remaining stats - matching in-game tooltip order.
     """
-    from rich.text import Text
 
     corrupted = []
     enchant = []
@@ -676,7 +700,7 @@ def _styled_prop_lines(prop_lines: list[str]) -> list:
 def _render_material_panel(
     item: ParsedItem,
     item_type: str,
-    names_db,
+    names_db: "ItemNamesDatabase",
 ) -> None:
     """Render a simple / material item as a compact coloured one-liner.
 
@@ -694,7 +718,6 @@ def _render_material_panel(
         names_db: The ItemNamesDatabase for base-name resolution.
             If not loaded, the raw item_code is printed instead.
     """
-    from rich.text import Text
 
     base_name = names_db.get_base_item_name(item.item_code) if names_db.is_loaded() else None
     display = base_name or item.item_code
@@ -708,12 +731,12 @@ def _render_material_panel(
 
 def _render_item_panel(
     item: ParsedItem,
-    isc_db,
-    skills_db,
-    props_db,
-    formatter,
-    sets_db,
-    names_db,
+    isc_db: "ItemStatCostDatabase",
+    skills_db: "SkillDatabase",
+    props_db: "PropertiesDatabase",
+    formatter: "PropertyFormatter",
+    sets_db: "SetsDatabase",
+    names_db: "ItemNamesDatabase",
     equipped_set_counts: dict[str, int],
     children: list[ParsedItem] | None = None,
 ) -> None:
@@ -728,7 +751,6 @@ def _render_item_panel(
     Socket child items (location_id=6) are never rendered as standalone panels -
     they are aggregated into their parent panel via the `children` parameter.
     """
-    from rich.text import Text
 
     if children is None:
         children = []
@@ -736,9 +758,8 @@ def _render_item_panel(
     # Material-like items: simple items OR extended items that are materials
     # (pliers, gem clusters, orbs, keys, shards, etc.)
     # Rendered as compact colored lines, not full panels.
-    from d2rr_toolkit.game_data.item_types import get_item_type_db as _get_type_db
 
-    _tdb = _get_type_db()
+    _tdb = get_item_type_db()
     _item_type = _tdb.get_item_type(item.item_code)
     _MATERIAL_TYPES = {"grab", "elix", "ques", "rpot", "wpot"}
     _is_material = (
@@ -751,6 +772,11 @@ def _render_item_panel(
         _render_material_panel(item, _item_type, names_db)
         return
 
+    if item.extended is None:
+        # Simple items without an extended header are routed via the
+        # material panel above; if we land here on a non-material it is
+        # a parser bug, but render minimally rather than crash.
+        return
     quality_id = item.extended.quality
     # Title line colour - Crafted diverges from the tier indicator
     # (title=Magic-blue, subtype=Crafted-orange); get_title_color()
@@ -866,8 +892,6 @@ def _render_item_panel(
         lines.append(Text("Ethereal", style="dim"))
 
     # ── Weapon Damage + Defense + Requirements (shared with GUI) ────────────
-    from d2rr_toolkit.game_data.item_types import get_item_type_db
-    from d2rr_toolkit.display import item_display
 
     type_db = get_item_type_db()
     item_category = type_db.classify(item.item_code)
@@ -1039,11 +1063,11 @@ def _render_item_panel(
 
             # Set-wide bonuses (from sets.txt PCode2-5 + FCode1-8)
             set_bonus_lines: list[Text] = []
-            for tier in set_def.partial_tiers:
-                req = tier.pieces_required
+            for partial in set_def.partial_tiers:
+                req = partial.pieces_required
                 is_active = equipped_count >= req
                 style = COLOR_UNIQUE if is_active else f"dim {COLOR_UNIQUE}"
-                for entry in tier.entries:
+                for entry in partial.entries:
                     if entry.effective_value() == 0:
                         continue
                     display = entry.format(formatter, props_db, isc_db, skills_db)

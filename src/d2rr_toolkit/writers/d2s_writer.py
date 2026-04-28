@@ -14,8 +14,6 @@ The writer replaces only the 1st JM section (player items) and preserves
 everything from the 2nd JM onward.
 """
 
-from __future__ import annotations
-
 import logging
 import struct
 import tempfile
@@ -41,6 +39,7 @@ logger = logging.getLogger(__name__)
 # Re-exported here for backwards compatibility with callers that
 # imported it from this module.
 from d2rr_toolkit.exceptions import D2SWriteError  # noqa: E402,F401
+from d2rr_toolkit.backup import create_backup
 
 
 class D2SWriter:
@@ -389,9 +388,20 @@ class D2SWriter:
         item_section += struct.pack("<H", jm_count)  # item count
 
         # Write each root item followed by its socket children.
+        # source_data is bytes|None on the model but the writer is invoked
+        # only after parsing populates it - None here is a programming bug.
         for item in self._items:
+            if item.source_data is None:
+                raise D2SWriteError(
+                    f"Item {item.item_code!r} has no source_data; cannot write."
+                )
             item_section += item.source_data
             for child in item.socket_children:
+                if child.source_data is None:
+                    raise D2SWriteError(
+                        f"Socket child {child.item_code!r} has no source_data; "
+                        f"cannot write."
+                    )
                 item_section += child.source_data
 
         # Append trailing bytes that the parser could not decode but that
@@ -442,7 +452,6 @@ class D2SWriter:
         """
         # Safety net: back up the original file BEFORE building the new one.
         # If the target doesn't exist yet (first write), skip the backup.
-        from d2rr_toolkit.backup import create_backup
 
         if output_path.exists():
             backup_path = create_backup(output_path)

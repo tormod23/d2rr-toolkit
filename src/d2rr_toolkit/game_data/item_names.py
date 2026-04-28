@@ -63,8 +63,6 @@ are stripped before returning display strings to the caller.
  runtime, never cached as hardcoded constants]
 """
 
-from __future__ import annotations
-
 import csv
 import json
 import logging
@@ -74,6 +72,13 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from d2rr_toolkit.meta.source_versions import SourceVersions
+from d2rr_toolkit.adapters.casc import (
+    get_game_data_reader,
+    list_game_data_files,
+    read_game_data_bytes,
+    read_game_data_rows,
+)
+from d2rr_toolkit.meta import cached_load
 
 logger = logging.getLogger(__name__)
 
@@ -146,9 +151,8 @@ class StringsDatabase:
             # retry - these are always the benign kind of trailing
             # comma produced by machine-generated exports, not a
             # semantic ambiguity.
-            import re as _re
 
-            cleaned = _re.sub(r",(\s*[}\]])", r"\1", text)
+            cleaned = re.sub(r",(\s*[}\]])", r"\1", text)
             try:
                 entries = json.loads(cleaned)
             except (ValueError, json.JSONDecodeError) as e2:
@@ -289,12 +293,6 @@ class ItemNamesDatabase:
         install first, D2R Resurrected CASC second. No arguments - the
         shared singleton already knows where both sources live.
         """
-        from d2rr_toolkit.adapters.casc import (
-            get_game_data_reader,
-            list_game_data_files,
-            read_game_data_bytes,
-            read_game_data_rows,
-        )
 
         # ── Strings: merge mod + CASC JSONs ─────────────────────────────────
         for casc_path in list_game_data_files("data:data/local/lng/strings/*.json"):
@@ -866,7 +864,6 @@ class ItemNamesDatabase:
         Returns:
             Base item name (e.g. "Colossus Sword", "Hand Axe"), or None.
         """
-        import re
 
         # Primary: look up by item code in strings JSON (D2R uses code as key)
         s = self._strings.get(item_code, lang)
@@ -1027,7 +1024,6 @@ def load_item_names(
             instance preferred across batched loaders.
         cache_dir: Optional cache root override.
     """
-    from d2rr_toolkit.meta import cached_load
 
     def _build() -> None:
         _ITEM_NAMES_DB.load()

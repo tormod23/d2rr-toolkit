@@ -11,8 +11,6 @@ item-parsing helpers inherited from other mixins
 golden diff is the safety gate.
 """
 
-from __future__ import annotations
-
 import logging
 import struct
 from typing import TYPE_CHECKING

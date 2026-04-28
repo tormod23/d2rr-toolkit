@@ -24,8 +24,6 @@ Usage::
     # row-major, y=0 at top. Index 0 means transparent.
 """
 
-from __future__ import annotations
-
 import logging
 import struct
 from dataclasses import dataclass
@@ -36,7 +34,7 @@ logger = logging.getLogger(__name__)
 # ── Data classes ────────────────────────────────────────────────────────────
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class IndexedDC6Frame:
     """One DC6 frame as palette indices (not RGBA).
 

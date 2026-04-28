@@ -62,12 +62,39 @@ See ``docs/GUI_STAT_BREAKDOWN_API.md`` for the consumer-facing
 dataclass / call-signature reference.
 """
 
-from __future__ import annotations
-
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace as _dc_replace
 from itertools import combinations_with_replacement
-from typing import TYPE_CHECKING, Literal
+from typing import Any, Literal, TYPE_CHECKING
+
+# StatRollRange is constructed at runtime; ItemRollContext is only used
+# in type annotations but lives in the same leaf module so we import
+# both eagerly to keep imports flat.
+from d2rr_toolkit.game_data._roll_types import ItemRollContext, StatRollRange
+
+# Eager imports of the data modules and formatter.  None of these import
+# back into ``stat_breakdown`` at module load time (``property_formatter``
+# uses a hook registered at the bottom of this file - see
+# :func:`_breakdown_hook`), so the import graph stays a DAG with
+# ``stat_breakdown`` strictly above the data layer.
+from d2rr_toolkit.game_data.affix_rolls import (
+    _PROP_CODE_FALLBACK_STATS,
+    get_affix_roll_db,
+    load_affix_rolls,
+)
+from d2rr_toolkit.game_data.corruption_rolls import (
+    get_corruption_db,
+    load_corruption_rolls,
+)
+from d2rr_toolkit.game_data.enchantment_recipes import (
+    get_enchantment_db,
+    load_enchantment_recipes,
+)
+from d2rr_toolkit.game_data.property_formatter import (
+    FormattedProperty,
+    get_property_formatter,
+    set_breakdown_hook,
+)
 
 if TYPE_CHECKING:
     from d2rr_toolkit.game_data.affix_rolls import AffixRollDatabase
@@ -75,16 +102,13 @@ if TYPE_CHECKING:
         CorruptionRollDatabase,
     )
     from d2rr_toolkit.game_data.enchantment_recipes import (
+        EnchantmentMod,
         EnchantmentRecipe,
         EnchantmentRecipeDatabase,
     )
     from d2rr_toolkit.game_data.item_stat_cost import ItemStatCostDatabase
     from d2rr_toolkit.game_data.item_types import ItemTypeDatabase
     from d2rr_toolkit.game_data.properties import PropertiesDatabase
-    from d2rr_toolkit.game_data.property_formatter import (
-        ItemRollContext,
-        StatRollRange,
-    )
     from d2rr_toolkit.game_data.skills import SkillDatabase
 
 logger = logging.getLogger(__name__)
@@ -127,7 +151,7 @@ _BOOKKEEPING_STATS: frozenset[int] = frozenset(
 
 # ── Contribution + breakdown dataclasses ────────────────────────────────────
 
-ContributionSource = Literal[
+type ContributionSource = Literal[
     "base_roll",
     "corruption",
     "enchantment",
@@ -139,6 +163,8 @@ ContributionSource = Literal[
     "unknown_modifier",
     "residual",
 ]
+
+type Ambiguity = Literal["unique", "multiple", "none"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -254,7 +280,7 @@ class StatBreakdown:
     contributions: tuple[StatContribution, ...]
     is_consistent: bool
     is_perfect_roll: bool
-    ambiguity: Literal["unique", "multiple", "none"]
+    ambiguity: Ambiguity
     parser_warning: str | None = None
 
 
@@ -380,7 +406,7 @@ class StatBreakdownResolver:
         self,
         *,
         stat_id: int,
-        prop: dict,
+        prop: dict[str, Any],
         item: object,
         roll_context: "ItemRollContext",
     ) -> StatBreakdown:
@@ -418,7 +444,7 @@ class StatBreakdownResolver:
         explained = sum(c.amount for c in contributions)
         residual = observed - explained
 
-        ambiguity: Literal["unique", "multiple", "none"] = "unique"
+        ambiguity: Ambiguity = "unique"
         warning: str | None = None
 
         # ── 4. Enchantment attribution (subset search) ─────────────
@@ -766,15 +792,7 @@ class StatBreakdownResolver:
         """
         if not per_stat_sum:
             return ()
-        try:
-            from d2rr_toolkit.game_data.property_formatter import (
-                get_property_formatter,
-            )
-
-            fmt = get_property_formatter()
-        except ImportError:
-            logger.warning("property_formatter unavailable for breakdown preview")
-            return ()
+        fmt = get_property_formatter()
         out: list[str] = []
         magical = getattr(item, "magical_properties", None) or ()
         param_by_stat = {
@@ -856,7 +874,7 @@ class StatBreakdownResolver:
         self,
         stat_id: int,
         item: object,
-        prop: dict,
+        prop: dict[str, Any],
     ) -> StatContribution | None:
         """Ethereal items have +50% defense on stat 31 only."""
         if stat_id != 31:
@@ -883,7 +901,7 @@ class StatBreakdownResolver:
     def _base_roll_contributions(
         self,
         stat_id: int,
-        prop: dict,
+        prop: dict[str, Any],
         roll_context: "ItemRollContext",
         remaining: float,
     ) -> list[StatContribution]:
@@ -922,10 +940,6 @@ class StatBreakdownResolver:
             return []
         if not contribs:
             return []
-
-        # Import here so the dataclass is available without adding a
-        # runtime import at module top (avoids a circular).
-        from d2rr_toolkit.game_data.property_formatter import StatRollRange
 
         out: list[StatContribution] = []
         residual = remaining
@@ -998,7 +1012,7 @@ class StatBreakdownResolver:
         residual: float,
         stat_id: int,
         item: object,
-    ) -> tuple[list[tuple["EnchantmentRecipe", object]], str] | None:
+    ) -> tuple[list[tuple["EnchantmentRecipe", "EnchantmentMod"]], str] | None:
         """Find the enchant recipe subset whose mods sum to ``residual``.
 
         Returns a tuple ``(subset, ambiguity)`` where ``ambiguity`` is
@@ -1012,7 +1026,7 @@ class StatBreakdownResolver:
 
         # Collect every (recipe, mod) that touches this stat AND is
         # valid for one of the item's enchantment buckets.
-        candidates: list[tuple["EnchantmentRecipe", object]] = []
+        candidates: list[tuple["EnchantmentRecipe", "EnchantmentMod"]] = []
         seen_rows: set[int] = set()
         for bucket in bucket_matches:
             for recipe, mod in self._enchant_db.recipes_touching_code_for_stat(
@@ -1043,10 +1057,6 @@ class StatBreakdownResolver:
         """Expand a property code to every ISC stat id it touches."""
         # Delegate to the affix resolver's helper - it already knows
         # the dmg% fallback map and all the broadcast codes.
-        from d2rr_toolkit.game_data.affix_rolls import (
-            _PROP_CODE_FALLBACK_STATS,
-        )
-
         pd = self._props.get(prop_code)
         ids: set[int] = set()
         if pd is not None:
@@ -1201,14 +1211,11 @@ def _short_mod_display(
     Falls back to a terse ``"+value code"`` when the formatter isn't
     available or returns ``None``.
     """
-    # Lazy import + lazy call to keep the breakdown module import-light.
+    fmt = get_property_formatter()
     try:
-        from d2rr_toolkit.game_data.property_formatter import (
-            get_property_formatter,
-        )
-
-        fmt = get_property_formatter()
-        iv = int(value) if value == int(value) else value
+        # ``format_code_value`` accepts only int; coerce floats to int (the
+        # display formatter does its own perlevel division).
+        iv = int(value)
         display = fmt.format_code_value(
             code,
             iv,
@@ -1219,7 +1226,7 @@ def _short_mod_display(
         )
         if display:
             return display.strip()
-    except (ImportError, KeyError, ValueError, TypeError) as exc:
+    except (KeyError, ValueError, TypeError) as exc:
         logger.warning(
             "format_code_value fallback for code=%r value=%r: %s",
             code,
@@ -1287,6 +1294,8 @@ def _coerce_float(v: object) -> float | None:
 
     if v is None:
         return None
+    if not isinstance(v, (int, float, str, bytes)):
+        return None
     try:
         return float(v)
     except (TypeError, ValueError):
@@ -1297,6 +1306,8 @@ def _coerce_int(v: object) -> int | None:
     """Coerce ``v`` to int, returning ``None`` for non-numeric inputs."""
 
     if v is None:
+        return None
+    if not isinstance(v, (int, float, str, bytes)):
         return None
     try:
         return int(v)
@@ -1329,10 +1340,10 @@ def _is_perfect_roll(contributions: list[StatContribution]) -> bool:
 
 
 def _find_subsets_summing_to(
-    candidates: list[tuple[object, object]],
+    candidates: list[tuple["EnchantmentRecipe", "EnchantmentMod"]],
     target: float,
     max_subset_size: int,
-) -> list[list[tuple[object, object]]]:
+) -> list[list[tuple["EnchantmentRecipe", "EnchantmentMod"]]]:
     """Enumerate multi-subsets of (recipe, mod) whose mods sum to ``target``.
 
     D2R Reimagined lets the player apply the SAME enchant recipe more
@@ -1347,7 +1358,7 @@ def _find_subsets_summing_to(
     combinations-with-replacement, which stays well inside 50k
     evaluations even at capacity 10.
     """
-    matches: list[list[tuple[object, object]]] = []
+    matches: list[list[tuple["EnchantmentRecipe", "EnchantmentMod"]]] = []
     max_size = min(max_subset_size, _HARD_ENCHANT_LIMIT)
     for size in range(1, max_size + 1):
         for combo in combinations_with_replacement(candidates, size):
@@ -1357,3 +1368,101 @@ def _find_subsets_summing_to(
                 if len(matches) >= 2:
                     return matches
     return matches
+
+
+# ─── Breakdown hook registration ────────────────────────────────────────────
+#
+# Registered with :mod:`property_formatter` at module load time so callers can
+# keep using ``PropertyFormatter.format_properties_grouped(breakdown=True)``
+# without ``property_formatter`` having to import this module - which would
+# close the ``property_formatter <-> stat_breakdown`` cycle.  See the module
+# docstring of :mod:`d2rr_toolkit.game_data._roll_types` for the full
+# rationale.
+
+
+def _breakdown_hook(
+    formatted: list["FormattedProperty"],
+    *,
+    isc_db: "ItemStatCostDatabase",
+    props_db: "PropertiesDatabase",
+    skills_db: "SkillDatabase | None",
+    item_types_db: "ItemTypeDatabase | None",
+    item: object,
+    roll_context: ItemRollContext,
+) -> list["FormattedProperty"]:
+    """Stamp per-stat breakdown attribution onto pre-formatted properties.
+
+    This is the hook installed onto :mod:`property_formatter` and invoked from
+    inside ``PropertyFormatter.format_properties_grouped(breakdown=True)``.
+    Callers do not need to invoke it directly - register the module
+    (``import d2rr_toolkit.game_data.stat_breakdown``) and use the formatter
+    API as before.
+    """
+    # Lazy-load the three data sources the resolver needs.  The
+    # cached_load helper makes repeat calls free.
+    if not get_affix_roll_db().is_loaded():
+        try:
+            load_affix_rolls()
+        except (OSError, ValueError, KeyError) as exc:
+            logger.warning("affix_rolls auto-load failed: %s", exc)
+    if not get_corruption_db().is_loaded():
+        try:
+            load_corruption_rolls()
+        except (OSError, ValueError, KeyError) as exc:
+            logger.warning("corruption_rolls auto-load failed: %s", exc)
+    if not get_enchantment_db().is_loaded():
+        try:
+            load_enchantment_recipes()
+        except (OSError, ValueError, KeyError) as exc:
+            logger.warning("enchantment_recipes auto-load failed: %s", exc)
+
+    resolver = StatBreakdownResolver(
+        affix_db=get_affix_roll_db(),
+        corruption_db=get_corruption_db(),
+        enchant_db=get_enchantment_db(),
+        isc_db=isc_db,
+        props_db=props_db,
+        skills_db=skills_db,
+        item_types_db=item_types_db,
+    )
+    breakdowns = resolver.resolve_item(item, roll_context)
+
+    # Stamp each FormattedProperty's ``breakdown`` field.  When a single line
+    # collapses multiple stats (damage pair), pick the first stat's breakdown
+    # as representative - the GUI can walk ``source_stat_ids`` if it needs
+    # per-half detail.
+    out: list[FormattedProperty] = []
+    for fp in formatted:
+        sid = fp.source_stat_ids[0] if fp.source_stat_ids else None
+        bd = breakdowns.get(sid) if sid is not None else None
+        # Joint-perfection for multi-stat display lines: the star must only
+        # appear when EVERY stat in the group rolled at its range max.  See
+        # the (now-deleted) inline comment in property_formatter.py for the
+        # full rationale - this branch preserves that semantics verbatim.
+        is_perfect = fp.is_perfect
+        if bd is not None:
+            per_stat_perfections: list[bool] = []
+            for s in fp.source_stat_ids:
+                sbd = breakdowns.get(s)
+                if sbd is not None:
+                    per_stat_perfections.append(sbd.is_perfect_roll)
+            if per_stat_perfections:
+                is_perfect = all(per_stat_perfections)
+            else:
+                is_perfect = bd.is_perfect_roll
+            if len(fp.source_stat_ids) > 1 and bd.is_perfect_roll != is_perfect:
+                bd = _dc_replace(bd, is_perfect_roll=is_perfect)
+        out.append(
+            FormattedProperty(
+                segments=fp.segments,
+                plain_text=fp.plain_text,
+                source_stat_ids=fp.source_stat_ids,
+                roll_ranges=fp.roll_ranges,
+                is_perfect=is_perfect,
+                breakdown=bd,
+            )
+        )
+    return out
+
+
+set_breakdown_hook(_breakdown_hook)

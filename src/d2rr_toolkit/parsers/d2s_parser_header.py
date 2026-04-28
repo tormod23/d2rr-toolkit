@@ -10,8 +10,6 @@ byte-exact golden diff is the safety gate (see
 All [BV] / [BINARY_VERIFIED] tags moved verbatim with the code.
 """
 
-from __future__ import annotations
-
 import logging
 import struct
 from typing import TYPE_CHECKING

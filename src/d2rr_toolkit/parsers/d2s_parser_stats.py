@@ -8,8 +8,6 @@ All [BV] tags preserved; the byte-exact golden diff
 (``tests/test_d2s_parse_snapshot.py``) is the safety gate.
 """
 
-from __future__ import annotations
-
 import logging
 from typing import TYPE_CHECKING, Any
 

@@ -24,8 +24,6 @@ With mod overlay::
     # Mod files take priority over CASC for read_file() and has_file()
 """
 
-from __future__ import annotations
-
 import fnmatch
 import logging
 from pathlib import Path
@@ -215,7 +213,7 @@ class CASCReader:
         try:
             mod_root = self._mod_dir.resolve(strict=False)
             candidate = (mod_root / rel).resolve(strict=False)
-        except (OSError, ValueError):
+        except OSError, ValueError:
             return None
         try:
             candidate.relative_to(mod_root)
@@ -245,6 +243,11 @@ class CASCReader:
 
         # Step 4: ENCODING manifest
         enc_raw = self._read_by_ekey(enc_ekey)
+        if enc_raw is None:
+            raise RuntimeError(
+                f"CASC ENCODING blob not found by EKey {enc_ekey.hex()}; "
+                "build config / index files are inconsistent."
+            )
         load_encoding(enc_raw, self._ckey_map)
         logger.info("Encoding: %d CKey entries", len(self._ckey_map))
 

@@ -9,8 +9,6 @@ import back from it at module-top level).
 Any new parser-layer exception types belong here too.
 """
 
-from __future__ import annotations
-
 
 class GameDataNotLoadedError(RuntimeError):
     """Raised when the parser is invoked before game-data singletons are populated.

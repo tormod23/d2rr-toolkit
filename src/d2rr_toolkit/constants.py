@@ -3,8 +3,6 @@
 Tags: [BV] = binary-verified, [SPEC_ONLY] = from spec, not yet verified.
 """
 
-from __future__ import annotations
-
 
 # ============================================================
 # FILE SIGNATURE & VERSION

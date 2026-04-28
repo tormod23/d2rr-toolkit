@@ -6,14 +6,14 @@ build-backend = "setuptools.build_meta"
 name = "d2rr-toolkit"
 version = "0.1.0-dev"
 description = "Parser, writer, and archive toolkit for D2R Reimagined save files (CLI + Python library)"
-requires-python = ">=3.10"
+requires-python = ">=3.14"
 readme = "README.md"
 license = { text = "MIT" }
 
 dependencies = [
     "typer>=0.12",
     "rich>=13",
-    "pydantic>=2.0",
+    "pydantic>=2.10",
     # platformdirs resolves the per-user cache directory for the
     # game-data pickle cache (d2rr_toolkit.meta.cache).  When absent
     # the cache falls back to ~/.cache/d2rr-toolkit, so the library
@@ -52,7 +52,7 @@ where = ["src"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py314"
 extend-exclude = [
     # Ad-hoc verification scripts (pre-2026-04-11, not shipped).
     "tests/verification",
@@ -78,7 +78,7 @@ ignore = [
 ]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.14"
 strict = true
 
 [tool.pytest.ini_options]

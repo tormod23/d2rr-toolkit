@@ -26,8 +26,6 @@ that the existing sprite pipeline can decode.
  8 class ``.frontend`` sprites and 4 merc icons present.]
 """
 
-from __future__ import annotations
-
 # Binary class ID -> CASC portrait path.
 #
 # The asset name follows Blizzard's convention "<classname>icon.sprite"

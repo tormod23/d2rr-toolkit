@@ -43,10 +43,9 @@ modified stash back to disk via
     the GUI should refuse to offer this as an option (user directive).
 """
 
-from __future__ import annotations
-
 import logging
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -58,9 +57,12 @@ from d2rr_toolkit.writers.item_utils import (
     synthesize_simple_item_blob,
 )
 
-if TYPE_CHECKING:
-    from d2rr_toolkit.models.character import ParsedItem
-    from d2rr_toolkit.parsers.d2i_parser import ParsedSharedStash
+from d2rr_toolkit.backup import create_backup
+from d2rr_toolkit.constants import ITEM_BIT_HUFFMAN_START
+from d2rr_toolkit.models.character import ItemFlags, ParsedItem
+from d2rr_toolkit.parsers.d2i_parser import D2IParser, ParsedSharedStash, SharedStashTab
+from d2rr_toolkit.writers.d2i_writer import D2IWriter
+from d2rr_toolkit.writers.item_utils import encode_huffman_code
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +103,7 @@ class Section5MissingError(RuneUpgradeError):
 # ── Result type ──────────────────────────────────────────────────────────────
 
 
-@dataclass
+@dataclass(slots=True)
 class CubeUpResult:
     """Summary of a cube-up run, for display / logging / CLI output.
 
@@ -143,7 +145,7 @@ def _next_rune_code(code: str) -> str:
     return f"r{n + 1:02d}"
 
 
-def _section5_tab(stash: "ParsedSharedStash"):
+def _section5_tab(stash: "ParsedSharedStash") -> "SharedStashTab":
     """Return the Section 5 tab or raise if missing."""
     if len(stash.tabs) <= SECTION5_TAB_INDEX:
         raise Section5MissingError(
@@ -171,7 +173,7 @@ def count_runes_in_section5(stash: "ParsedSharedStash") -> dict[str, int]:
     return counts
 
 
-def _find_rune_items(tab, code: str) -> list["ParsedItem"]:
+def _find_rune_items(tab: "SharedStashTab", code: str) -> list["ParsedItem"]:
     """Return all ParsedItem entries in ``tab.items`` matching ``code``."""
     return [it for it in tab.items if (it.item_code or "").lower() == code]
 
@@ -179,7 +181,7 @@ def _find_rune_items(tab, code: str) -> list["ParsedItem"]:
 # ── Mutation primitives ------------------------------------------------------
 
 
-def _remove_runes(tab, code: str, amount: int) -> None:
+def _remove_runes(tab: "SharedStashTab", code: str, amount: int) -> None:
     """Remove ``amount`` runes of ``code`` from Section 5 (by display count).
 
     Walks existing stacks in list order, reducing the top-most stack's
@@ -213,7 +215,7 @@ def _remove_runes(tab, code: str, amount: int) -> None:
         raise NotEnoughRunesError(f"Wanted to remove {amount} {code}, short by {remaining}.")
 
 
-def _add_runes(tab, code: str, amount: int) -> None:
+def _add_runes(tab: "SharedStashTab", code: str, amount: int) -> None:
     """Add ``amount`` runes of ``code`` to Section 5.
 
     If a stack of ``code`` already exists, its display_quantity is
@@ -256,9 +258,6 @@ def _synthesize_rune_parsed_item(code: str, *, display_quantity: int) -> "Parsed
     grid so position doesn't affect rendering; TC67/TC61 templates
     already show multiple items sharing (0, 0).
     """
-    from d2rr_toolkit.constants import ITEM_BIT_HUFFMAN_START
-    from d2rr_toolkit.models.character import ItemFlags, ParsedItem
-    from d2rr_toolkit.writers.item_utils import encode_huffman_code
 
     code = _validate_rune_code(code)
     blob = synthesize_simple_item_blob(
@@ -450,7 +449,7 @@ def cube_up_bulk(
 # ── End-to-end file orchestration -------------------------------------------
 
 
-@dataclass
+@dataclass(slots=True)
 class CubeUpFileResult:
     """Summary returned by :func:`cube_up_file_single` / :func:`cube_up_file_bulk`.
 
@@ -467,7 +466,7 @@ class CubeUpFileResult:
 
 def _execute_cube_up_file(
     src_path: Path,
-    mutator,
+    mutator: Callable[["ParsedSharedStash"], CubeUpResult],
     *,
     dest_path: Path | None = None,
     backup: bool = True,
@@ -486,9 +485,6 @@ def _execute_cube_up_file(
     returns a :class:`CubeUpResult`. It is free to mutate
     ``stash.tabs[5].items`` in place.
     """
-    from d2rr_toolkit.backup import create_backup
-    from d2rr_toolkit.parsers.d2i_parser import D2IParser
-    from d2rr_toolkit.writers.d2i_writer import D2IWriter
 
     src_path = Path(src_path)
     dest = Path(dest_path) if dest_path is not None else src_path
@@ -549,7 +545,7 @@ def cube_up_file_single(
         output path.
     """
 
-    def _do(stash):
+    def _do(stash: "ParsedSharedStash") -> CubeUpResult:
         return cube_up_single(stash, rune_code, pairs)
 
     return _execute_cube_up_file(src_path, _do, dest_path=dest_path, backup=backup)
@@ -576,7 +572,7 @@ def cube_up_file_bulk(
         :class:`CubeUpFileResult`.
     """
 
-    def _do(stash):
+    def _do(stash: "ParsedSharedStash") -> CubeUpResult:
         return cube_up_bulk(stash, min_keep=min_keep)
 
     return _execute_cube_up_file(src_path, _do, dest_path=dest_path, backup=backup)

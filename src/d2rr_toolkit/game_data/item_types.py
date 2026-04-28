@@ -18,16 +18,17 @@ which fields to read after the extended item header, causing
 all subsequent items in the list to be misaligned.
 """
 
-from __future__ import annotations
-
 import csv
 import logging
 from enum import Enum, auto
 from pathlib import Path
+from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from d2rr_toolkit.meta.source_versions import SourceVersions
+from d2rr_toolkit.adapters.casc import read_game_data_rows
+from d2rr_toolkit.meta import cached_load
 
 logger = logging.getLogger(__name__)
 
@@ -503,7 +504,7 @@ class ItemTypeDatabase:
     # Introspection helpers used by d2rr_toolkit.catalog.item_catalog    #
     # ------------------------------------------------------------------ #
 
-    def iter_item_codes(self):
+    def iter_item_codes(self) -> Iterator[str]:
         """Yield every item code known to this database (armor+weap+misc).
 
         Order is unspecified (implementation detail: sorted). Intended
@@ -512,7 +513,7 @@ class ItemTypeDatabase:
         """
         return iter(sorted(self._armor_codes | self._weapon_codes | self._misc_codes))
 
-    def iter_type_codes(self):
+    def iter_type_codes(self) -> Iterator[str]:
         """Yield every itemtypes.txt Code known to this database.
 
         Includes rollable and non-rollable types alike - callers that
@@ -847,10 +848,8 @@ def load_item_types(
         cache_dir: Optional cache root override (tests route this
             into a ``tmp_path``).
     """
-    from d2rr_toolkit.meta import cached_load
 
     def _build() -> None:
-        from d2rr_toolkit.adapters.casc import read_game_data_rows
 
         armor_rows = read_game_data_rows("data:data/global/excel/armor.txt")
         weapon_rows = read_game_data_rows("data:data/global/excel/weapons.txt")

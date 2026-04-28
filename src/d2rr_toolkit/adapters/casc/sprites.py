@@ -19,8 +19,6 @@ Usage::
     png_bytes = decode_dc6(raw_dc6_data, palette=palette_rgb_list)
 """
 
-from __future__ import annotations
-
 import hashlib
 import io
 import logging
@@ -32,10 +30,10 @@ logger = logging.getLogger(__name__)
 try:
     from PIL import Image
 except ImportError:
-    Image = None  # type: ignore[assignment, misc]
+    Image = None  # type: ignore[assignment]
 
 # Valid output formats
-ImageFormat = Literal["png", "webp"]
+type ImageFormat = Literal["png", "webp"]
 
 
 # SpA1 header is a fixed 40-byte prefix; pixel RGBA follows immediately.
@@ -227,8 +225,10 @@ def decode_dc6(
                         if idx < len(palette):
                             r, g, b_val = palette[idx]
                             alpha = 0 if idx == 0 else 255
+                            assert pixels is not None  # narrows PixelAccess | None
                             pixels[x, y] = (r, g, b_val, alpha)
                         else:
+                            assert pixels is not None
                             pixels[x, y] = (128, 128, 128, 255)
                     x += 1
 

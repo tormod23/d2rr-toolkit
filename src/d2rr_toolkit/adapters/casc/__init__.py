@@ -36,14 +36,13 @@ Usage::
     bytes_ = reader.read_file("data:data/global/excel/itemtypes.txt")
 """
 
-from __future__ import annotations
-
 import csv
 import io
 import logging
 from pathlib import Path
 
 from d2rr_toolkit.adapters.casc.reader import CASCReader
+from d2rr_toolkit.config import get_game_paths
 
 __all__ = [
     "CASCReader",
@@ -75,7 +74,6 @@ def get_game_data_reader() -> CASCReader:
     """
     global _reader
     if _reader is None:
-        from d2rr_toolkit.config import get_game_paths
 
         gp = get_game_paths()
         _reader = CASCReader(game_dir=gp.d2r_install, mod_dir=gp.mod_mpq)

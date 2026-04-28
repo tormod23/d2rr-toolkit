@@ -22,18 +22,24 @@ D2I Binary Structure (discovered from TC04/TC05/TC06 analysis):
     Section size at header offset 0x10 = total section bytes (header + JM + count + items).
 """
 
-from __future__ import annotations
-
 import logging
 import struct
+from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from d2rr_toolkit.models.character import ParsedItem
+
+if TYPE_CHECKING:
+    from d2rr_toolkit.parsers.d2i_parser import ParsedSharedStash
 from d2rr_toolkit.writers.item_utils import (  # noqa: F401 - patch_item_position is re-exported for backwards compat
     clear_d2s_only_flags,
     ensure_unique_uids,
     patch_item_position,
 )
+import hashlib
+from d2rr_toolkit.analysis.section6 import extract_section6
+from d2rr_toolkit.backup import create_backup
 
 logger = logging.getLogger(__name__)
 
@@ -79,33 +85,16 @@ class DuplicateSection5ItemError(ValueError):
     """Raised when a Section 5 tab contains multiple items with the same item_code."""
 
 
+@dataclass(slots=True)
 class D2ISectionInfo:
     """Metadata about one section in a D2I file."""
 
-    __slots__ = (
-        "header_offset",
-        "section_size",
-        "jm_offset",
-        "item_count",
-        "items_start",
-        "items_end",
-    )
-
-    def __init__(
-        self,
-        header_offset: int,
-        section_size: int,
-        jm_offset: int,
-        item_count: int,
-        items_start: int,
-        items_end: int,
-    ) -> None:
-        self.header_offset = header_offset
-        self.section_size = section_size
-        self.jm_offset = jm_offset
-        self.item_count = item_count
-        self.items_start = items_start
-        self.items_end = items_end
+    header_offset: int
+    section_size: int
+    jm_offset: int
+    item_count: int
+    items_start: int
+    items_end: int
 
 
 def _find_sections(data: bytes) -> list[D2ISectionInfo]:
@@ -369,7 +358,6 @@ class D2IWriter:
         """
         # Local import: section6 lives in `analysis/`, which would create
         # an import cycle if pulled in at module top.
-        from d2rr_toolkit.analysis.section6 import extract_section6
 
         src_s6 = extract_section6(self._source)
         if src_s6 is None:
@@ -387,7 +375,6 @@ class D2IWriter:
         built_page = built[built_s6.file_offset : built_s6.file_offset + built_s6.page_size]
 
         if src_page != built_page:
-            import hashlib
 
             src_hash = hashlib.sha256(src_page).hexdigest()[:16]
             built_hash = hashlib.sha256(built_page).hexdigest()[:16]
@@ -436,7 +423,6 @@ class D2IWriter:
         **Automatically creates a timestamped backup** of the existing file
         at ``~/.d2rr_toolkit/backups/<filename>/`` before overwriting it.
         """
-        from d2rr_toolkit.backup import create_backup
 
         if output_path.exists():
             create_backup(output_path)
@@ -731,7 +717,7 @@ class D2IWriter:
         return bytes(section)
 
     @classmethod
-    def from_stash(cls, source_data: bytes, stash) -> "D2IWriter":
+    def from_stash(cls, source_data: bytes, stash: "ParsedSharedStash") -> "D2IWriter":
         """Create a writer with a snapshot of the current stash state.
 
         Args:

@@ -8,8 +8,6 @@ Supports both Index V2 (version 0x07) and V1 (version 0x05).
 Reference: CascLib by Ladislav Zezula - CascReadFile.cpp
 """
 
-from __future__ import annotations
-
 import logging
 import struct
 from pathlib import Path

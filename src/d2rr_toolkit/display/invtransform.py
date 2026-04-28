@@ -22,13 +22,18 @@ Usage::
     # Returns e.g. "cred", "lgld", "dpur", or None
 """
 
-from __future__ import annotations
-
 import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from d2rr_toolkit.models.character import ParsedItem
+from d2rr_toolkit.display.item_display import get_socket_child_codes
+from d2rr_toolkit.game_data.item_names import get_item_names_db
+from d2rr_toolkit.game_data.item_types import (
+    ItemCategory,
+    get_item_type_db,
+)
+from d2rr_toolkit.game_data.sets import get_sets_db
 
 logger = logging.getLogger(__name__)
 
@@ -120,8 +125,6 @@ def get_invtransform(item: "ParsedItem") -> str | None:
         Color code string (e.g. "cred", "lgld", "dpur") or None if no
         tinting applies.
     """
-    from d2rr_toolkit.game_data.item_types import ItemCategory, get_item_type_db
-    from d2rr_toolkit.game_data.item_names import get_item_names_db
 
     type_db = get_item_type_db()
     names_db = get_item_names_db()
@@ -141,7 +144,6 @@ def get_invtransform(item: "ParsedItem") -> str | None:
     if can_tint and invtransform is None:
         # 2. Set invtransform
         if quality_id == 5 and item.set_item_id is not None:
-            from d2rr_toolkit.game_data.sets import get_sets_db
 
             sets_db = get_sets_db()
             if sets_db.is_loaded():
@@ -158,7 +160,6 @@ def get_invtransform(item: "ParsedItem") -> str | None:
 
         # 4. Gem socket color: first socketed gem determines color
         if invtransform is None and item.flags.socketed:
-            from d2rr_toolkit.display.item_display import get_socket_child_codes
 
             child_codes = get_socket_child_codes(item, item.total_nr_of_sockets)
             if child_codes:

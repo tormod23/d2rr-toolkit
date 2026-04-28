@@ -30,8 +30,6 @@ To decode the dice roll from a saved item:
  never cached as hardcoded constants]
 """
 
-from __future__ import annotations
-
 import csv
 import logging
 from dataclasses import dataclass, field
@@ -40,6 +38,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from d2rr_toolkit.meta.source_versions import SourceVersions
+from d2rr_toolkit.adapters.casc import read_game_data_rows
+from d2rr_toolkit.meta import cached_load
 
 
 logger = logging.getLogger(__name__)
@@ -65,7 +65,7 @@ Stored values 102-201 indicate a fully corrupted item.
 """
 
 
-@dataclass
+@dataclass(slots=True)
 class CorruptionMod:
     """One modifier applied by a corruption outcome."""
 
@@ -75,7 +75,7 @@ class CorruptionMod:
     max_val: int  # maximum value
 
 
-@dataclass
+@dataclass(slots=True)
 class CorruptionOutcome:
     """One range-band in the corruption outcome table for a specific item type."""
 
@@ -329,11 +329,9 @@ def load_cubemain(
             rely on the platformdirs default
             (``%LOCALAPPDATA%/d2rr-toolkit/data_cache`` on Windows).
     """
-    from d2rr_toolkit.meta import cached_load
 
     def _build() -> None:
         """Populate the :class:`CubeMainDatabase` via the Iron Rule."""
-        from d2rr_toolkit.adapters.casc import read_game_data_rows
 
         casc_path = "data:data/global/excel/cubemain.txt"
         rows = read_game_data_rows(casc_path)
