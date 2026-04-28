@@ -116,13 +116,13 @@ def test_parse_snapshot_matches_golden(fixture: Path) -> None:
     golden = _golden_path_for(fixture)
     if os.environ.get("UPDATE_SNAPSHOTS") == "1":
         golden.parent.mkdir(parents=True, exist_ok=True)
-        golden.write_text(current, encoding="utf-8")
+        golden.write_text(current, encoding="utf-8", newline="\n")
         return
 
     if not golden.is_file():
         pytest.skip(f"no golden yet for {fixture.name}; run with UPDATE_SNAPSHOTS=1 to create one.")
 
-    expected = golden.read_text(encoding="utf-8")
+    expected = golden.read_text(encoding="utf-8", newline="\n")
     if current == expected:
         return
 
@@ -130,7 +130,7 @@ def test_parse_snapshot_matches_golden(fixture: Path) -> None:
     # <stem>.actual.json so the maintainer can eyeball the diff
     # without re-running the parser manually.
     actual_path = golden.with_suffix(".actual.json")
-    actual_path.write_text(current, encoding="utf-8")
+    actual_path.write_text(current, encoding="utf-8", newline="\n")
     pytest.fail(
         f"D2SParser output drifted vs golden for {fixture.name}.\n"
         f"  Expected: {golden}\n"
