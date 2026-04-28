@@ -527,19 +527,59 @@ should name the field it reads explicitly.
 # ============================================================
 
 WEAPON_WIDTH_MAX_DUR: int = 8
-"""max_durability field width on weapons. [BV TC09/TC33]."""
+"""max_durability BASE field width on weapons. [BV TC09/TC33].
+
+The 8-bit value is the BASE max_dur from items.txt, NOT the
+effective max after ``+%Increased Maximum Durability`` affixes.
+The game computes the effective max at display time as
+``base_max * (1 + sum_of_max_dur_affixes)``.
+
+Example (TC34 / Superior Club, ``+12% Increased Maximum
+Durability``): file stores base_max = 250 (8-bit), in-game tooltip
+shows "Durability: 280 of 280" because effective max = 250 * 1.12.
+"""
 
 WEAPON_WIDTH_CUR_DUR: int = 10
-"""cur_durability field width on weapons. [BV].
+"""cur_durability field width on weapons. [BV TC34/Superior Club].
 
-V105 uses a 10-bit cur_dur for BOTH weapons AND armor; this matches
-``ARMOR_WIDTH_CUR_DUR``. The 10-bit single-field interpretation
-replaces an earlier ``8 + 8 + 2 = 18 bits`` model where the trailing
-2 bits were treated as an unknown post-dur field. The two encodings
-are bit-equivalent on the wire (same total 18 bits) but the 10-bit
-form is the canonical layout: it accounts for ``+max_durability``
-affixes that can push effective cur_dur past 255 while keeping the
-base max in 8 bits.
+10-bit field, capable of representing values 0..1023. Stores the
+EFFECTIVE current durability (post-affix), unlike ``max_dur`` which
+stores the BASE pre-affix value. This split is what allows
+``cur_dur`` to legitimately exceed the on-disk ``max_dur``: the
+displayed max is ``base_max * (1 + max_dur_affix%)``, which can
+push past 255 even when the base fits in 8 bits.
+
+## Verification (TC34, README cross-checked)
+
+  Item                       file_max  file_cur  README max/cur  Affix
+  -------------------------  --------  --------  --------------  --------------
+  Superior Club  (5,5)       250       280       280 / 280       +12% Max Dur
+  Superior Leather Armor     24        26        26 / 26         +11% Max Dur
+  Superior Boots             12        13        13 / 13         +14% Max Dur
+  Superior Hand Axe (3,5)    250       217       250 / 217       (no Max Dur)
+  Damaged Club               82        72        82 / 72         (no Max Dur)
+  Viper Thirst (Rare)        250       250       250 / 250       (no Max Dur)
+
+For every item with a ``+Max Dur`` affix the parser's ``cur_dur``
+matches the README's effective cur. For items WITHOUT the affix
+both ``max_dur`` and ``cur_dur`` match the README directly.
+
+## Throwing weapons
+
+Throwing weapons (Javelins, Throwing Knives, Glaive variants) carry
+the same 10-bit ``cur_dur`` field on the wire, but the in-game
+tooltip shows ``Quantity X / Y`` instead of a Durability line. The
+``cur_dur`` field for throwing weapons therefore appears to violate
+``cur <= max`` (e.g., TC34 / Javelin: file_cur = 693, file_max = 250)
+but this is invisible to the player and irrelevant to game logic - the
+durability field is simply not user-facing for that item class.
+
+DO NOT try to "fix" the 10-bit interpretation back to 8+2 because of
+throwing-weapon ``cur > max`` observations: the Superior Club case
+above (in-game cur=280 in the tooltip, parser cur=280, parser max=250
+from 8-bit base) proves the 10-bit reading is the right model. Any
+"8-bit cur + 2-bit post" interpretation would give the Superior Club
+``cur = 24`` and contradict the in-game tooltip.
 
 When ``max_dur == 0`` (Phase Blade / ``7cr``), cur_dur is omitted
 and the parser falls back to a 1-bit padding read - see the
@@ -547,14 +587,15 @@ weapon-path parse code for the ``max_dur > 0`` gating.
 """
 
 # Back-compat alias - older code referenced WEAPON_WIDTH_POST_DUR as
-# a separate 2-bit field. With the unified 10-bit cur_dur model that
-# field no longer exists; the constant resolves to 0 so any leftover
+# a separate 2-bit field. With the 10-bit cur_dur model that field
+# no longer exists; the constant resolves to 0 so any leftover
 # ``reader.read(WEAPON_WIDTH_POST_DUR)`` is a no-op rather than
 # silently consuming bits.
 WEAPON_WIDTH_POST_DUR: int = 0
 """Deprecated. Set to 0 (no separate field) under the 10-bit cur_dur
 model. The bits formerly read here are now the high 2 bits of
-``WEAPON_WIDTH_CUR_DUR``."""
+``WEAPON_WIDTH_CUR_DUR`` and encode the high 2 bits of the EFFECTIVE
+current durability for melee weapons with ``+Max Dur`` affixes."""
 
 
 # ============================================================

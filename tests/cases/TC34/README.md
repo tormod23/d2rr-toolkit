@@ -55,7 +55,7 @@ spear (spr) and scimitar (scm) with ISC properties, and a socketed Superior weap
 | (1,5) | Cracked Javelin [N]                        | Low      | Throwing, qty 350/350, iLvl 1      |
 | (2,5) | Low Quality Javelin [N]                    | Low      | Throwing, qty 350/350, iLvl 1      |
 | (3,5) | Superior Hand Axe [N]                      | Superior | +1 Max Dmg, +2 AR, iLvl 4          |
-| (4,5) | Superior Hand Axe [N]                      | Superior | +1 Max Dmg, +2 AR, iLvl 4 (copy)  |
+| (4,5) | Low Quality Hand Axe [N]                   | Low      | Reduced stats, iLvl 1              |
 | (5,5) | Superior Club [N]                          | Superior | +12% Max Dur, +50% vs Undead, Socketed(1) |
 | (6,5) | Damaged Club [N]                           | Low      | Reduced stats, iLvl 1              |
 | (7,5) | Viper Thirst (Rare Scimitar [N])           | Rare     | iLvl 90, 4 properties              |
@@ -197,14 +197,14 @@ spear (spr) and scimitar (scm) with ISC properties, and a socketed Superior weap
       - +1 to Maximum Weapon Damage
       - +2 to Attack Rating
 
-14. **Superior Hand Axe [N]** - Position: (4,5)
-    - **Quality:** Superior
-    - **Item Level:** 4
-    - **One-Hand Damage:** 3 to 7
-    - **Durability:** 217 of 250
-    - **Properties:**
-      - +1 to Maximum Weapon Damage
-      - +2 to Attack Rating
+14. **Low Quality Hand Axe [N]** - Position: (4,5)
+    - **Quality:** Low Quality
+    - **Item Level:** 1
+    - **Durability:** 45 of 82
+    - **Properties:** *(none beyond base stats)*
+    - **Note:** in-game-verified parser values (2026-04-27);
+      the previous "Superior Hand Axe (copy)" labelling was a
+      README error and did not match the file contents.
 
 15. **Superior Club [N]** - Position: (5,5)
     - **Quality:** Superior
@@ -413,16 +413,14 @@ expected_values:
         - "+1 to Maximum Weapon Damage"
         - "+2 to Attack Rating"
 
-    - name: "Superior Hand Axe"
+    - name: "Low Quality Hand Axe"
       location: "inventory"
       pos: [4, 5]
-      quality: "superior"
-      item_level: 4
-      durability_current: 217
-      durability_max: 250
-      properties:
-        - "+1 to Maximum Weapon Damage"
-        - "+2 to Attack Rating"
+      quality: "low"
+      item_level: 1
+      durability_current: 45
+      durability_max: 82
+      properties: []
 
     - name: "Superior Club"
       location: "inventory"
