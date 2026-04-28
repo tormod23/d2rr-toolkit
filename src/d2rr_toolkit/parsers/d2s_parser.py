@@ -113,9 +113,17 @@ def _auto_load_game_data() -> None:
     exercise the fail-loud path without side-effects.
 
     Loads: item_types, item_stat_cost, skills, charstats (D2S character
-    headers need class-name resolution).
+    headers need class-name resolution), item_names (the
+    ``_unique_binary_to_star_id`` / ``_set_binary_to_star_id`` maps the
+    item parser uses to translate raw 12-bit unique IDs to the *ID
+    column from ``uniqueitems.txt``; without it the lookup falls back to
+    ``dict.get(key, key)`` and silently returns the raw binary value
+    instead of the proper Reimagined-offset-corrected *ID, producing
+    wrong ``unique_type_id`` values for any unique whose binary index
+    sits past one of the Reimagined separator rows).
     """
     from d2rr_toolkit.game_data.charstats import load_charstats
+    from d2rr_toolkit.game_data.item_names import get_item_names_db, load_item_names
     from d2rr_toolkit.game_data.item_types import load_item_types
     from d2rr_toolkit.game_data.skills import load_skills
 
@@ -127,6 +135,8 @@ def _auto_load_game_data() -> None:
         load_skills()
     if not get_charstats_db().is_loaded():
         load_charstats()
+    if not get_item_names_db().is_loaded():
+        load_item_names()
 
 
 # Character stats: field names (Python-side names, NOT from any excel file)
