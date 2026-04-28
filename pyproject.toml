@@ -1,6 +1,11 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.build_meta"
+# uv_build is Astral's first-party PEP 517 build backend, shipped as a
+# slimmed-down uv with only the build code. It auto-discovers the
+# package under src/ via the standard src layout and needs no extra
+# [tool.uv.build-backend] block here -- see
+# https://docs.astral.sh/uv/concepts/build-backend/.
+requires = ["uv_build>=0.11.8,<0.12"]
+build-backend = "uv_build"
 
 [project]
 name = "d2rr-toolkit"
@@ -8,7 +13,12 @@ version = "0.1.0-dev"
 description = "Parser, writer, and archive toolkit for D2R Reimagined save files (CLI + Python library)"
 requires-python = ">=3.14"
 readme = "README.md"
-license = { text = "MIT" }
+# PEP 639 license metadata: declare the SPDX identifier as a string and
+# point license-files at the file globs that should be packaged into
+# both the sdist and the wheel's .dist-info/. uv_build respects these
+# fields and copies the matched files into the distribution.
+license = "MIT"
+license-files = ["LICENSE"]
 
 dependencies = [
     "typer>=0.12",
@@ -46,9 +56,6 @@ dev = [
 
 [project.scripts]
 d2rr-toolkit = "d2rr_toolkit.cli:main"
-
-[tool.setuptools.packages.find]
-where = ["src"]
 
 [tool.ruff]
 line-length = 100

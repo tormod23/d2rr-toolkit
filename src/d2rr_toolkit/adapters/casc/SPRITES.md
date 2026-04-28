@@ -1,8 +1,9 @@
 # casc.sprites -- Sprite Format Decoders
 
 Converts Blizzard-proprietary sprite formats into standard image files
-(PNG or WebP) with transparent backgrounds. Part of the `d2rr_toolkit.casc`
-package but usable independently -- the only dependency is Pillow.
+(PNG or WebP) with transparent backgrounds. Part of the
+`d2rr_toolkit.adapters.casc` package but usable independently -- the
+only dependency is Pillow.
 
 ## Supported Formats
 

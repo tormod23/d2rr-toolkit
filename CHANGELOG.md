@@ -5,6 +5,26 @@ This project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Build system
+- **Switched build backend from `setuptools` to
+  [`uv_build`](https://docs.astral.sh/uv/concepts/build-backend/)**
+  (Astral's first-party PEP 517 backend, pinned to
+  `uv_build>=0.11.8,<0.12`). The change removes the `setuptools` and
+  `wheel` build-time dependencies entirely and drops the
+  `[tool.setuptools.packages.find]` block from `pyproject.toml`;
+  `uv_build` auto-discovers the `src/` layout. `uv sync`, `uv build`,
+  and `pip install -e .` all keep working out of the box -- modern
+  pip resolves `uv_build` from PyPI when it sees the new
+  `[build-system]` block.
+- **PEP 639 license metadata.** The legacy
+  `license = { text = "MIT" }` table form was replaced with
+  `license = "MIT"` (SPDX expression) and `license-files = ["LICENSE"]`.
+  Built wheels now ship `LICENSE` under `*.dist-info/licenses/` and
+  the metadata file gains `License-Expression: MIT` +
+  `License-File: LICENSE` (Metadata-Version bumped 2.3 -> 2.4).
+- Stale `src/d2rr_toolkit.egg-info/` directory (a setuptools artifact)
+  removed; `.gitignore` already covered `*.egg-info/`.
+
 ### Changed (BREAKING)
 - **Minimum Python version raised to 3.14** (was 3.10).
   3.10 reaches EOL in October 2026; 3.14 is the current stable line

@@ -127,7 +127,7 @@ frame = decode_dc6_indexed(data, frame=0)
 ```
 
 - Decodes **palette indices** only - no palette applied. This is
-  the key difference from `d2rr_toolkit.casc.sprites.decode_dc6`.
+  the key difference from `d2rr_toolkit.adapters.casc.sprites.decode_dc6`.
 - **y=0 at top** (flips DC6's bottom-to-top storage order).
 - **Index 0 stays 0** - caller decides what transparent pixels mean.
 - Supports multi-frame DC6 via the `frame` parameter (default 0 is

@@ -72,16 +72,25 @@ save files - usable as a Python library **and** as a ready-made
 ## Install
 
 The project uses [`uv`](https://docs.astral.sh/uv/) for
-deterministic, lockfile-driven installs:
+deterministic, lockfile-driven installs and is built with
+[`uv_build`](https://docs.astral.sh/uv/concepts/build-backend/),
+Astral's first-party PEP 517 build backend:
 
 ```bash
 uv sync --all-extras
 ```
 
-For a classic `pip` install without the lockfile:
+For a classic `pip` install without the lockfile (any modern pip
+will pick up `uv_build` from PyPI as the declared build backend):
 
 ```bash
 pip install -e ".[dev]"
+```
+
+To produce sdist + wheel under `dist/`:
+
+```bash
+uv build
 ```
 
 ## Quickstart

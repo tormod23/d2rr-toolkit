@@ -1,4 +1,4 @@
-# d2rr_toolkit.casc -- CASC Archive Reader
+# d2rr_toolkit.adapters.casc -- CASC Archive Reader
 
 Pure-Python reader for Blizzard CASC (Content Addressable Storage Container)
 archives, specifically tested with Diablo II Resurrected. Implements the core
@@ -8,7 +8,7 @@ any native/C dependencies.
 ## Package Structure
 
 ```
-d2rr_toolkit/casc/
+d2rr_toolkit/adapters/casc/
     __init__.py       Re-exports CASCReader
     reader.py         Main CASCReader class (public API)
     sprites.py        SpA1 + DC6 sprite decoders (PNG/WebP output)

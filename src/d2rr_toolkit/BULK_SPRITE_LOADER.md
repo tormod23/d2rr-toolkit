@@ -40,7 +40,7 @@ from d2rr_toolkit.sprites import (
     make_sprite_key,
     prepare_bulk_sprite_loader,
 )
-from d2rr_toolkit.adapters.casc import CASCReader  # or pycasc once extracted
+from d2rr_toolkit.adapters.casc import CASCReader
 
 # Once, at app start. prepare_bulk_sprite_loader pulls item_types,
 # item_names and sets through the shared CASCReader (Iron Rule:

@@ -152,6 +152,7 @@ class Section6Page:
 
     @property
     def record_count(self) -> int:
+        """Number of decoded 10-byte records in this Section 6 page."""
         return len(self.records)
 
     @property

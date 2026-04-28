@@ -15,22 +15,29 @@ those should be paraphrased or translated in-line.
 ## Development environment
 
 ```bash
-# Create a fresh venv (Python 3.14)
-python -m venv .venv
-source .venv/bin/activate        # or .venv\Scripts\activate on Windows
-
-# Install with dev extras
-uv sync --all-extras             # preferred - uses uv.lock
-pip install -e ".[dev]"          # classic pip fallback
+# Create a fresh venv (Python 3.14) and install with dev extras
+uv sync --all-extras             # preferred - uses uv.lock + uv_build
+pip install -e ".[dev]"          # classic pip fallback (still works)
 ```
 
-After editing `pyproject.toml` dependencies, regenerate the egg-info
-and lockfile:
+`uv sync` provisions the venv, resolves against `uv.lock`, and performs
+an editable install through the project's PEP 517 build backend.
+
+The project is built with **`uv_build`** (Astral's first-party PEP 517
+backend, see `[build-system]` in `pyproject.toml`). The `src/` layout
+is auto-discovered -- no `[tool.setuptools.*]` or `MANIFEST.in` needed.
+
+After editing `pyproject.toml` dependencies, regenerate the lockfile:
 
 ```bash
-rm -rf src/d2rr_toolkit.egg-info
-pip install -e .
-uv lock
+uv lock                          # refresh uv.lock
+uv sync --all-extras             # apply changes to the venv
+```
+
+To produce distribution artifacts:
+
+```bash
+uv build                         # writes dist/*.tar.gz + dist/*.whl
 ```
 
 ## Quality gates
