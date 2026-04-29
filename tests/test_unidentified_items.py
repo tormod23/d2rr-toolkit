@@ -245,9 +245,9 @@ def test_live_stash_unidentified_heavy_boots_if_present(dbs):
                     identified=False,
                 )
                 # Must be the base name "Heavy Boots", never the set name.
-                assert unid_name == names.get_base_item_name(
-                    "vbt"
-                ), f"live unid leak: {unid_name!r}"
+                assert unid_name == names.get_base_item_name("vbt"), (
+                    f"live unid leak: {unid_name!r}"
+                )
                 # And with identified=True, we'd get the set label.
                 id_name = names.build_display_name(
                     it.item_code,
@@ -323,13 +323,25 @@ def test_archive_refuses_unidentified_item(tmp_path):
     unid_location = None
     for tab_idx, tab in enumerate(stash.tabs):
         for item_idx, it in enumerate(tab.items):
+            # Skip phantoms - they also have ``identified=False`` (the
+            # bit at flag-bit-4 happens to land at 0 in random byte
+            # content), but the archive layer rejects them via the
+            # phantom gate with a different diagnostic. The dedicated
+            # phantom test (TC75) covers that path; this test is
+            # specifically about the unidentified gate firing on a
+            # genuinely-unidentified-but-otherwise-real item.
+            if it.is_phantom:
+                continue
             if it.flags and not it.flags.identified:
                 unid_location = (tab_idx, item_idx)
                 break
         if unid_location:
             break
     if unid_location is None:
-        pytest.skip("No unidentified item in live stash right now")
+        pytest.skip(
+            "No genuinely-unidentified item in live stash right now "
+            "(phantom items skipped, see test_phantom_item_detection.py)."
+        )
 
     # Copy to tmp - we must not mutate the user's real save file even on
     # a thrown exception. The archive.create_backup call inside
@@ -345,9 +357,9 @@ def test_archive_refuses_unidentified_item(tmp_path):
             extract_from_d2i(work, tab_idx, item_idx, db, display_name="test")
         # And the file must be byte-identical to the original (no
         # backup written, no modification).
-        assert (
-            work.read_bytes() == live.read_bytes()
-        ), "Refused archive still mutated the stash file"
+        assert work.read_bytes() == live.read_bytes(), (
+            "Refused archive still mutated the stash file"
+        )
     finally:
         db.close()
 

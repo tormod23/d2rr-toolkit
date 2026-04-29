@@ -771,7 +771,7 @@ class ItemsParserMixin:
                     expected=f"item ending within section (<= bit {section_end_bit})",
                     found=f"overshoot by {item_end_bit - section_end_bit} bits",
                     context=(
-                        f"item_code={code!r} quality={quality} " f"item_start_bit={item_start_bit}"
+                        f"item_code={code!r} quality={quality} item_start_bit={item_start_bit}"
                     ),
                 )
         # Invariant 3: reader position is inside the data buffer.
@@ -783,9 +783,7 @@ class ItemsParserMixin:
                 bit_offset=item_end_bit,
                 expected=f"item ending within buffer (<= byte {reader_bytes})",
                 found=f"bit offset {item_end_bit} past end-of-data",
-                context=(
-                    f"item_code={code!r} quality={quality} " f"item_start_bit={item_start_bit}"
-                ),
+                context=(f"item_code={code!r} quality={quality} item_start_bit={item_start_bit}"),
             )
         # Invariant 2 is enforced inside _read_property_list_with_isc
         # (the 0x1FF terminator is required for the loop to exit), so
@@ -1906,7 +1904,43 @@ class ItemsParserMixin:
                         throw_max_dur,
                         _throw_qty,
                     )
-                self._current_item_properties = self._read_magical_properties(socketed=socketed)
+                # [BINARY_VERIFIED TC76 / 7s7 Holy Fury] Set-quality throwing
+                # weapons have the same 5-bit set_bonus_mask + per-tier bonus
+                # property lists as Set melee weapons (~line 1968) and Set
+                # armor (~line 2259). The earlier code went straight to
+                # _read_magical_properties without reading the mask, which
+                # left the mask bits in the stream and pushed every
+                # property read 5 bits early - cascading into 6 garbage
+                # stat reads + 96 bits of unconsumed set-bonus-list data
+                # at the end (the "phantom 'hhwd' item" symptom).
+                if quality == 5:
+                    self._set_bonus_mask = reader.read(5)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(
+                            "Set throwing weapon '%s': set_bonus_mask=%d",
+                            item_code,
+                            self._set_bonus_mask,
+                        )
+                    self._current_item_properties = self._read_magical_properties(
+                        socketed=socketed,
+                    )
+                    mask = self._set_bonus_mask
+                    set_bonus_props_t: list[dict[str, Any]] = []
+                    for i in range(5):
+                        if mask & (1 << i):
+                            bonus_props = self._read_magical_properties(socketed=False)
+                            set_bonus_props_t.extend(bonus_props)
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.debug(
+                                    "Set throwing weapon bonus list %d (aprop%d) read",
+                                    i + 1,
+                                    i + 1,
+                                )
+                    self._current_set_bonus_properties = set_bonus_props_t
+                else:
+                    self._current_item_properties = self._read_magical_properties(
+                        socketed=socketed,
+                    )
                 return ItemArmorData(
                     defense_raw=0,
                     defense_display=0,
